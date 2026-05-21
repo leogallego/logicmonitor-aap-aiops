@@ -265,6 +265,9 @@ The rulebook evaluates the alert and matches the Crawl rule:
 The "Reset BGP Session" job template (`playbooks/reset_bgp_session.yml`) targets the affected device, clears all BGP sessions, waits for peers to re-establish, and validates the recovery. On success, it reports the remediation result back to LogicMonitor via `playbooks/report_to_logicmonitor.yml`, which acknowledges and annotates the alert:
 
 ```yaml
+# Note: The logicmonitor.integration collection does not yet include an alert
+# acknowledgment module. This task uses ansible.builtin.uri as a placeholder
+# until native module support is available.
 - name: Acknowledge alert in LogicMonitor
   ansible.builtin.uri:
     url: "https://{{ lm_company }}.logicmonitor.com/santaba/rest/alert/alerts/{{ alert_id }}/ack"
