@@ -1,0 +1,2109 @@
+[
+  {
+    "name": "generate_alert_link",
+    "description": "Generate a direct URL/link/weburl for a LogicMonitor (LM) alert. \n\n**Returns:** Direct URL to alert details page. URL pattern: https://test.logicmonitor.com/santaba/uiv4/alerts/{alertId}\n\n**When to use:** \n- Include alert links in Slack/PagerDuty notifications\n- Share alert context with team members\n- Create incident tickets with direct alert references\n- Build alert reports with clickable links\n\n**Why use this:** Simplifies alert investigation by providing direct navigation to the alert details page with full context, history, and acknowledgement options. \n\n**Workflow:** Get alertId from \"list\\_alerts\", then use this tool to generate the shareable link for team collaboration. \n\n**Related tools:** \"list\\_alerts\" (find alerts), \"get\\_alert\" (get details), \"acknowledge\\_alert\" (acknowledge).",
+    "annotations": {
+      "title": "Generate alert link",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "alertId": {
+          "type": "string",
+          "description": "The ID of the alert to generate a link for"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "alertId"
+      ]
+    }
+  },
+  {
+    "name": "generate_dashboard_link",
+    "description": "Generate a direct URL/link/weburl for a LogicMonitor (LM) dashboard. \n\n**Returns:** Complete dashboard URL with full group hierarchy path, dashboard details (id, name, groupName), and group path array. URL pattern: https://test.logicmonitor.com/santaba/uiv4/dashboards/dashboardGroups-{path},dashboards-{id}\n\n**When to use:** \n- Share dashboard links in Slack/email/tickets\n- Create documentation with direct dashboard links\n- Embed dashboard URLs in runbooks\n- Build custom reports with clickable links\n\n**Why use this:** Provides the complete navigable URL including all parent group IDs, so the link opens the dashboard in correct context within the UI navigation tree. \n\n**Workflow:** First use \"list\\_dashboards\" to find dashboard ID, then use this tool to generate the shareable link. \n\n**Related tools:** \"list\\_dashboards\" (find dashboard), \"get\\_dashboard\" (get details).",
+    "annotations": {
+      "title": "Generate dashboard link",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "dashboardId": {
+          "type": "number",
+          "description": "The ID of the dashboard to generate a link for"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "dashboardId"
+      ]
+    }
+  },
+  {
+    "name": "generate_resource_link",
+    "description": "Generate a direct URL/link/weburl for a LogicMonitor (LM) resource/device. \n\n**Returns:** Complete resource URL with full group hierarchy, resource/device details (id, name, displayName), and group path array. URL pattern: https://test.logicmonitor.com/santaba/uiv4/resources/treeNodes?resourcePath=resourceGroups-{path},resources-{id}\n\n**When to use:** \n- Share resource/device links in incident tickets\n- Create alert notifications with resource/device links\n- Build reports with clickable resource/device references\n- Document infrastructure with direct LM links\n\n**Why use this:** Provides the complete URL including all parent group IDs, so clicking the link navigates directly to the resource/device in the correct folder context. \n\n**Workflow:** First find resource/device using \"list\\_resources\" or \"search\\_resources\", then use this tool with deviceId to generate shareable link. \n\n**Related tools:** \"list\\_resources\" (find device), \"get\\_resource\" (get details), \"generate\\_alert\\_link\" (link to resource/device alerts).",
+    "annotations": {
+      "title": "Generate resource/device link",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "number",
+          "description": "The ID of the resource/device to generate a link for"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "deviceId"
+      ]
+    }
+  },
+  {
+    "name": "generate_website_link",
+    "description": "Generate a direct direct URL/link/weburl for a LogicMonitor (LM) website monitor with full hierarchy path for easy sharing and navigation. \n\n**What this does:** Creates shareable URL that opens specific website monitor in LogicMonitor UI, preserving the full folder hierarchy path. Link works for anyone with access to the LogicMonitor portal. \n\n**Returns:** Complete URL in format: https://test.logicmonitor.com/santaba/uiv4/websites/treeNodes#websiteGroups-{groupId1},websiteGroups-{groupId2},...,websites-{websiteId} \n\n**When to use:** \n- Share website monitor with team (Slack/email/tickets)\n- Create documentation with direct links\n- Build custom dashboards/reports with LM links\n- Reference in incident tickets\n- Bookmark frequently accessed monitors\n\n**Required parameters:** \n- websiteId: Website monitor ID (from \"list\\_websites\" or \"search\\_websites\")\n\n**Common use cases:** \n\n**Share in Slack/Teams:** \"Production API health check is failing: [View Monitor](generated-url-here)\" \n\n**Incident ticket documentation:** \"INC-12345: Website monitor showing SSL certificate expiring in 7 days. See: {generated-url}\" \n\n**Runbook links:** \"If homepage monitoring alerts, check: {generated-url-for-homepage-monitor}\" \n\n**Custom reporting:** Build report that includes clickable links to each website monitor for quick access. \n\n**Link structure explained:** The URL includes complete folder path (websiteGroups) so when clicked, the UI shows: \n- Full breadcrumb navigation (e.g., \"All Website Monitors > Production > External APIs > Homepage Check\")\n- Website monitor details page\n- Recent check history and availability\n- Current status and response times\n\n**Why use generated links:** \n- **Shareable:** Send exact monitor to teammates\n- **Bookmarkable:** Save frequent monitors for quick access\n- **Integration-friendly:** Use in external tools, tickets, wikis\n- **Context-preserving:** Shows full folder hierarchy when opened\n\n**Workflow example:** \n- Find website monitor: list_websites() \u2192 websiteId: 789\n- Generate link: generate_website_link(websiteId: 789)\n- Share link: \"Check this monitor: https://company.logicmonitor.com/santaba/uiv4/websites/...\"\n\n**Access requirements:** Link recipients must: \n- Have LogicMonitor user account\n- Have permissions to view website monitors\n- Have access to specific website monitor (based on access groups)\n\n**Best practices:** \n- Use in incident documentation for traceability\n- Include in runbooks for quick troubleshooting access\n- Add to monitoring dashboards for drill-down capability\n- Share with stakeholders who have LM access\n\n**Related tools:** \"list\\_websites\" (find website), \"get\\_website\" (verify details), \"generate\\_dashboard\\_link\" (for dashboards), \"generate\\_resource\\_link\" (for resources/devices), \"generate\\_alert\\_link\" (for alerts).",
+    "annotations": {
+      "title": "Generate website monitor link",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "websiteId": {
+          "type": "number",
+          "description": "The ID of the website monitor to generate a link for"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "websiteId"
+      ]
+    }
+  },
+  {
+    "name": "get_access_group",
+    "description": "Get detailed information about a specific access group in LogicMonitor (LM) monitoring by its ID. \n\n**Returns:** Complete access group details: name, description, tenant ID, list of associated resources (which resources/devices/groups are in this access group), list of users assigned to this access group. \n\n**When to use:** \n- Review which resources are in this access group\n- Check which users have access to this group\n- Audit access control before modifications\n- Verify tenant isolation configuration\n\n**Key information returned:** \n- **Resources:** Which resource/device groups and resources users in this access group can see\n- **Users:** Which users are assigned to this access group\n- **Tenant ID:** Multi-tenant identifier (MSP environments)\n\n**Impact analysis:** Before modifying access group: \n- Removing resource: Users lose visibility to those resource/device\n- Removing user: User loses visibility to all resources in group\n- Deleting group: All users lose their access scope\n\n**Workflow:** Use \"list\\_access\\_groups\" to find accessGroupId, then use this tool to review complete configuration before modifications. \n\n**Related tools:** \"list\\_access\\_groups\" (find groups), \"update\\_access\\_group\" (modify), \"list\\_users\" (see user access).",
+    "annotations": {
+      "title": "Get access group details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "accessGroupId": {
+          "type": "number",
+          "description": "The ID of the access group to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "accessGroupId"
+      ]
+    }
+  },
+  {
+    "name": "get_alert",
+    "description": "Get detailed information about a specific alert in LogicMonitor (LM) monitoring by its ID. \n\n**Returns:** Complete alert details: alert message, severity, threshold crossed, current value, alert history, escalation chain triggered, acknowledgement details, resource details, datasource/datapoint info, alert rule applied. \n\n**When to use:** \n- Investigate specific alert after getting ID from \"list\\_alerts\"\n- Check threshold and current values\n- Review alert history and escalation\n- Get context before acknowledging\n\n**Workflow:** First use \"list\\_alerts\" to find the alertId, then use this tool for complete investigation details. \n\n**Related tools:** \"acknowledge\\_alert\" (acknowledge alert), \"add\\_alert\\_note\" (document findings), \"generate\\_alert\\_link\" (share with team).",
+    "annotations": {
+      "title": "Get alert details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "alertId": {
+          "type": "string",
+          "description": "The ID of the alert to retrieve"
+        },
+        "needMessage": {
+          "type": "boolean",
+          "description": "Whether to include alert message details",
+          "default": true
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "alertId"
+      ]
+    }
+  },
+  {
+    "name": "get_alert_rule",
+    "description": "Get detailed information about a specific alert rule by ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete alert rule details: name, priority, enabled status, detailed matching conditions (device groups, datasources, datapoints, instance filters, severity levels), escalation chain assignment, suppression windows, notification settings. \n\n**When to use:**\n- Review exact matching logic before modifying rule\n- Troubleshoot why alert matched (or didn't match) this rule\n- Document alert routing policies\n- Verify suppression settings\n- Check which escalation chain receives matching alerts\n\n\n**Matching conditions explained:** \n- deviceGroups: Which resource/device folders this rule applies to (e.g., /Production/, /Database Servers/) \n- datasources: Which datasources trigger this rule (e.g., CPU, Memory, AWS_EC2) \n- datapoints: Specific metrics (e.g., CPUBusyPercent, MemoryUsedPercent) \n- instances: Filter by instance name (e.g., C: drive only, eth0 interface only) \n- severity: Alert levels (critical, error, warn) \n- escalatingChainId: Where matching alerts are routed \n\n**Troubleshooting use cases:** \n- \"Why did this CPU alert go to wrong team?\" \u2192 Check resource/device group + datasource filters \n- \"Why didn't I get paged?\" \u2192 Verify alert matches conditions AND check escalation chain \n- \"Too many alerts\" \u2192 Review if conditions too broad, add instance filters \n\n**Workflow:** Use \"list\\_alert\\_rules\" to find ruleId, then use this tool to review complete matching logic and routing. \n\n**Related tools:** \"list\\_alert\\_rules\" (find rules), \"update\\_alert\\_rule\" (modify), \"get\\_escalation\\_chain\" (check notification chain).",
+    "annotations": {
+      "title": "Get alert rule details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ruleId": {
+          "type": "number",
+          "description": "The ID of the alert rule to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "ruleId"
+      ]
+    }
+  },
+  {
+    "name": "get_audit_log",
+    "description": "Get detailed information about a specific audit log entry in LogicMonitor (LM) monitoring by its ID. \n\n**Returns:** Complete audit log details: username, IP address, exact timestamp, full description of action, session ID, affected resources, before/after values (for updates). \n\n**When to use:** \n- Get complete details after finding log ID via \"list\\_audit\\_logs\"\n- Review exact changes made (old vs new values)\n- Investigate specific incident with full context\n\n**Workflow:** First use \"list\\_audit\\_logs\" with filters to find relevant entries, then use this tool with the log ID for complete details. \n\n**Related tools:** \"list\\_audit\\_logs\" (search logs), \"search\\_audit\\_logs\" (text search).",
+    "annotations": {
+      "title": "Get audit details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "auditLogId": {
+          "type": "string",
+          "description": "The ID of the audit log entry to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "auditLogId"
+      ]
+    }
+  },
+  {
+    "name": "get_collector",
+    "description": "Get detailed information about a specific collector by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete collector details: description (name), hostname, platform, status, build version, number of resource/device monitored, free disk space, CPU/memory usage, last heartbeat, configuration. \n\n**When to use:** \n- Check collector health before assigning resources/devices\n- Verify collector capacity\n- Troubleshoot connectivity issues\n- Check version for updates\n- Monitor collector performance\n\n**Health indicators to check:** \n- status: \"alive\" (healthy) vs \"dead\" (offline/problem)\n- numberOfHosts: How many resource/device this collector monitors (capacity planning)\n- freeDiskSpace: Disk space available (needs GB for data buffering)\n- build: Version number (compare with \"list\\_collector\\_versions\" for updates)\n- lastHeartbeatTime: Recent = healthy, old = potential issue\n\n**Workflow:** Use \"list\\_collectors\" to find collectorId, then use this tool for detailed health check. \n\n**Related tools:** \"list\\_collectors\" (find collector), \"list\\_collector\\_versions\" (check updates), \"list\\_resources\" (see assigned resources/devices).",
+    "annotations": {
+      "title": "Get collector details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "collectorId": {
+          "type": "number",
+          "description": "The ID of the collector to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "collectorId"
+      ]
+    }
+  },
+  {
+    "name": "get_collector_group",
+    "description": "Get detailed information about a specific collector group by ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete collector group details: name, full path, parentId, description, number of collectors (direct and total), number of subgroups. \n\n**When to use:**\n- Get group path for documentation\n- Check collector membership counts\n- Verify group hierarchy\n- Review group structure before deploying collectors\n\n\n**Workflow:** Use \"list\\_collector\\_groups\" to find groupId, then use this tool for complete details. \n\n**Related tools:** \"list\\_collector\\_groups\" (find groups), \"list\\_collectors\" (collectors in group), \"create\\_collector\\_group\" (create new).",
+    "annotations": {
+      "title": "Get collector group details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "groupId": {
+          "type": "number",
+          "description": "The ID of the collector group to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "groupId"
+      ]
+    }
+  },
+  {
+    "name": "get_configsource",
+    "description": "Get detailed information about a specific ConfigSource by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete ConfigSource details: name, displayName, description, appliesTo logic (which resources/devices), collection method (CLI/SNMP/API), collection script, alert settings. \n\n**When to use:** \n- Understand what config is being collected\n- Review appliesTo logic (why it does/doesn't apply to device)\n- Check collection method\n- Troubleshoot config collection issues\n\n**Key information:** \n- appliesTo: Logic determining which resource/device get config tracking\n- collectMethod: How config is retrieved (CLI commands, SNMP, API)\n- configAlerts: Settings for when to alert on changes\n- lineageId: Built-in (LogicMonitor) vs custom ConfigSource\n\n**Workflow:** Use \"list\\_configsources\" to find configSourceId, then use this tool to understand how it works. \n\n**Related tools:** \"list\\_configsources\" (find ConfigSource), \"list\\_device\\_configs\" (see configs for device).",
+    "annotations": {
+      "title": "Get ConfigSource details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "configSourceId": {
+          "type": "number",
+          "description": "The ID of the configuration source to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "configSourceId"
+      ]
+    }
+  },
+  {
+    "name": "get_dashboard",
+    "description": "Get detailed information about a specific dashboard by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete dashboard details: name, description, groupId, owner, widgets configuration, widget count, sharing settings, template variables, last modified. \n\n**When to use:** \n- Review dashboard configuration\n- See widget definitions before cloning\n- Check dashboard owner\n- Verify template variables\n- Get dashboard metadata\n\n**What you get:** \n- widgetsConfig: JSON configuration of all widgets (chart types, metrics, thresholds)\n- widgetTokens: Template variables (e.g., defaultDeviceGroup for dynamic filtering)\n- groupId/groupName: Which folder dashboard is in\n- sharable: Whether dashboard is public/private\n\n**Use cases:** \n- Clone dashboard to create similar one\n- Export dashboard configuration for backup\n- Audit which resources/devices/metrics are being visualized\n- Document dashboard purpose and widgets\n\n**Workflow:** Use \"list\\_dashboards\" to find dashboardId, then get details, then \"generate\\_dashboard\\_link\" to get shareable URL. \n\n**Related tools:** \"list\\_dashboards\" (find dashboard), \"generate\\_dashboard\\_link\" (get URL), \"update\\_dashboard\" (modify), \"list\\_dashboard\\_groups\" (browse folders).",
+    "annotations": {
+      "title": "Get dashboard details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "dashboardId": {
+          "type": "number",
+          "description": "The ID of the dashboard to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "dashboardId"
+      ]
+    }
+  },
+  {
+    "name": "get_dashboard_group",
+    "description": "Get detailed information about a specific dashboard group by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete dashboard group details: name, full path, parentId, description, number of dashboards (direct and total), number of subgroups, owner, permissions. \n\n**When to use:** \n- Get group path for documentation\n- Check group membership counts\n- Verify group hierarchy\n- Review permissions before creating dashboards in it\n\n**Workflow:** Use \"list\\_dashboard\\_groups\" to find groupId, then use this tool for complete details. \n\n**Related tools:** \"list\\_dashboard\\_groups\" (find groups), \"list\\_dashboards\" (dashboards in group), \"create\\_dashboard\\_group\" (create new).",
+    "annotations": {
+      "title": "Get dashboard group details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "groupId": {
+          "type": "number",
+          "description": "The ID of the dashboard group to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "groupId"
+      ]
+    }
+  },
+  {
+    "name": "get_datasource",
+    "description": "Get detailed information about a specific datasource by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete datasource details: name, displayName, description, appliesTo logic, collection method, datapoints (metrics), thresholds, alert rules, polling interval. \n\n**When to use:** \n- Understand what datasource monitors\n- Review alert thresholds\n- See collection method (SNMP/WMI/API/script)\n- Check datapoint definitions\n- Troubleshoot why datasource applies/doesn't apply to device\n\n**Key information returned:** \n- appliesTo: Logic determining which resource/device get this datasource (e.g., \"system.hostname =\\~\\\"\\*prod\\*\\\"\")\n- dataSourceType: Collection method (SNMP, WMI, JDBC, API, script)\n- dataPoints: List of metrics collected (e.g., CPUBusyPercent, MemoryUsedPercent)\n- alertExpr: Threshold formulas (when to alert)\n- collectInterval: How often data is collected (seconds)\n\n**Understanding appliesTo logic:** Shows why datasource does/doesn't monitor certain resources/devices. Common patterns: \n- isWindows() - Only Windows resource/device\n- system.devicetype == \"server\" - Only servers\n- hasCategory(\"AWS/EC2\") - Only AWS EC2 instances\n\n**Workflow:** Use \"list\\_datasources\" to find dataSourceId, then use this tool to understand how it works. \n\n**Related tools:** \"list\\_datasources\" (find datasource), \"list\\_resource\\_datasources\" (see which resource/device use it).",
+    "annotations": {
+      "title": "Get datasource details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "dataSourceId": {
+          "type": "number",
+          "description": "The ID of the datasource to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "dataSourceId"
+      ]
+    }
+  },
+  {
+    "name": "get_escalation_chain",
+    "description": "Get detailed information about a specific escalation chain by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete escalation chain details: name, description, all stages with: recipients at each stage, notification methods (email/SMS/webhook), time delays between stages, rate limiting, business hours restrictions. \n\n**When to use:**\n- Review detailed notification workflow\n- Verify who gets notified at each stage\n- Check timing between escalations\n- Audit notification methods\n- Troubleshoot why notifications not received\n\n\n**Stage details returned:** For each stage: \n- Stage number (1, 2, 3...) \n- Delay before stage triggers (minutes) \n- Recipients/groups notified \n- Notification methods (email, SMS, integration) \n- Schedule (24/7 vs business hours only) \n\n**Example escalation chain details:** Stage 1 (0 min): Email \"oncall@company.com\", SMS \"+1-555-1234\" Stage 2 (15 min): PagerDuty integration, Email \"team-lead@company.com\" Stage 3 (30 min): Slack webhook, Email \"engineering-manager@company.com\" \n\n**Workflow:** Use \"list\\_escalation\\_chains\" to find chainId, then use this tool to review complete notification workflow. \n\n**Related tools:** \"list\\_escalation\\_chains\" (find chains), \"update\\_escalation\\_chain\" (modify), \"list\\_recipients\" (see recipients).",
+    "annotations": {
+      "title": "Get escalation chain details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "number",
+          "description": "The ID of the escalation chain to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "chainId"
+      ]
+    }
+  },
+  {
+    "name": "get_eventsource",
+    "description": "Get detailed information about a specific EventSource by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete EventSource details: name, displayName, description, appliesTo logic, collection method, filter rules, severity mapping, alert settings. \n\n**When to use:**\n- Understand what events are collected\n- Review filter rules (which events trigger alerts)\n- Check severity mapping\n- Troubleshoot event collection\n- See appliesTo logic\n\n\n**Key information:** \n- appliesTo: Which resources/devicesget event monitoring \n- filters: Rules for parsing/matching events \n- severityMapping: Map event levels (INFO/WARN/ERROR) to LM alert levels \n- schedule: When event collection runs \n\n**Workflow:** Use \"list\\_eventsources\" to find eventSourceId, then use this tool for complete configuration. \n\n**Related tools:** \"list\\_eventsources\" (find EventSource), \"list\\_device\\_eventsources\" (events for device).",
+    "annotations": {
+      "title": "Get EventSource details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "eventSourceId": {
+          "type": "number",
+          "description": "The ID of the eventsource to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "eventSourceId"
+      ]
+    }
+  },
+  {
+    "name": "get_integration",
+    "description": "Get detailed information about a specific integration by ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete integration details: name, type, configuration (API keys, webhooks, URLs), authentication status, last successful notification, error logs, which escalation chains use it. \n\n**When to use:**\n- Troubleshoot integration not working\n- Review configuration before updates\n- Check API keys/authentication\n- See last successful notification time\n- Audit integration settings\n\n\n**Configuration details by type:** \n- **Slack:** Webhook URL, channel names, mention settings \n- **PagerDuty:** Integration key, service mappings \n- **ServiceNow:** Instance URL, credentials, table mapping \n- **Jira:** Project keys, issue type, custom field mapping \n- **Webhook:** Target URL, authentication headers, payload format \n\n**Troubleshooting:** \n- Authentication failed: Check API keys/credentials \n- Not receiving notifications: Verify escalation chain configuration \n- Error logs: Review failed notification attempts \n\n**Workflow:** Use \"list\\_integrations\" to find integrationId, then use this tool for detailed configuration and troubleshooting. \n\n**Related tools:** \"list\\_integrations\" (find integrations), \"test\\_integration\" (send test), \"update\\_integration\" (modify).",
+    "annotations": {
+      "title": "Get integration details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "integrationId": {
+          "type": "number",
+          "description": "The ID of the integration to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "integrationId"
+      ]
+    }
+  },
+  {
+    "name": "get_netscan",
+    "description": "Get detailed information about a specific netscan by ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete netscan details: name, description, scan method, schedule, target networks/IPs, credentials, filters (include/exclude rules), resource/device properties to apply, collector assignment, duplicate detection settings, last execution results. \n\n**When to use:**\n- Review netscan configuration before running\n- Troubleshoot why certain resource/device not discovered\n- Check credentials and filters\n- Verify resource/device properties applied to discovered resources/devices\n- Understand duplicate detection logic\n\n\n**Configuration details returned:** \n- **Targets:** IP ranges, subnets, or cloud filters (e.g., \"192.168.1.0/24\", \"All EC2 with tag:Environment=prod\") \n- **Schedule:** How often scan runs (hourly, daily, weekly, on-demand) \n- **Credentials:** Which properties used for authentication (ssh.user, snmp.community) \n- **Filters:** Include/exclude rules (e.g., \"Exclude IPs ending in .1\", \"Only Linux servers\") \n- **Device properties:** Auto-applied to discovered resource/device (e.g., location, environment tags) \n- **Duplicate handling:** How to handle resource/device found in multiple scans \n\n**Troubleshooting use cases:** \n- \"Why resource/device not discovered?\" \u2192 Check if IP in target range and not excluded by filters \n- \"Wrong credentials?\" \u2192 Verify credential properties configured in netscan \n- \"resources/Devices missing properties?\" \u2192 Check default properties applied by netscan \n\n**Workflow:** Use \"list\\_netscans\" to find netscanId, then use this tool to review complete configuration. \n\n**Related tools:** \"list\\_netscans\" (find netscan), \"update\\_netscan\" (modify), \"run\\_netscan\" (execute now).",
+    "annotations": {
+      "title": "Get NetScan details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "netscanId": {
+          "type": "number",
+          "description": "The ID of the netscan to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "netscanId"
+      ]
+    }
+  },
+  {
+    "name": "get_opsnote",
+    "description": "Get detailed information about a specific operational note by ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete OpsNote details: note text, timestamp, creator, tags, scope (resources/devices/groups affected), related SDTs, linked resources. \n\n**When to use:**\n- Get full note details after finding ID via list\n- Review what was documented at specific time\n- Check scope of operational event\n- Verify linked resources\n\n\n**Workflow:** Use \"list\\_opsnotes\" to find note ID, then use this tool for complete details. \n\n**Related tools:** \"list\\_opsnotes\" (find notes), \"create\\_opsnote\" (add new), \"update\\_opsnote\" (modify).",
+    "annotations": {
+      "title": "Get OpsNote details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "opsNoteId": {
+          "type": "string",
+          "description": "The ID of the OpsNote to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "opsNoteId"
+      ]
+    }
+  },
+  {
+    "name": "get_recipient",
+    "description": "Get detailed information about a specific recipient by ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete recipient details: type, name, contact information (email/phone/URL), notification method, timezone, schedule restrictions, rate limiting settings. \n\n**When to use:**\n- Verify contact information before escalation\n- Check notification schedule (business hours vs 24/7)\n- Review rate limiting settings\n- Audit recipient configuration\n\n\n**Details returned:** \n- Contact info: Exact email/phone/webhook URL \n- Schedule: When notifications are sent (always vs business hours) \n- Rate limit: Max notifications per time period (prevent notification fatigue) \n- Method: Delivery mechanism (SMTP, Twilio, webhook) \n\n**Workflow:** Use \"list\\_recipients\" to find recipientId, then use this tool for complete configuration. \n\n**Related tools:** \"list\\_recipients\" (find recipient), \"update\\_recipient\" (modify), \"list\\_escalation\\_chains\" (usage).",
+    "annotations": {
+      "title": "Get recipient details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "recipientId": {
+          "type": "number",
+          "description": "The ID of the recipient to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "recipientId"
+      ]
+    }
+  },
+  {
+    "name": "get_recipient_group",
+    "description": "Get detailed information about a specific recipient group by ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete recipient group details: name, description, list of all members (recipients), member contact info, escalation chains using this group. \n\n**When to use:**\n- Review group membership before modifications\n- Verify who gets notified through this group\n- Check which escalation chains use this group\n- Audit team notification lists\n\n\n**Key information returned:** \n- Members: All recipients in group (names, emails, phones) \n- Usage: Which escalation chains reference this group \n- Description: Purpose/team name \n\n**Before modifying group:** Review escalation chain usage to understand impact of changes. Removing member from group affects all chains using that group. \n\n**Workflow:** Use \"list\\_recipient\\_groups\" to find groupId, then use this tool to review membership before updating. \n\n**Related tools:** \"list\\_recipient\\_groups\" (find groups), \"update\\_recipient\\_group\" (modify), \"list\\_escalation\\_chains\" (see where used).",
+    "annotations": {
+      "title": "Get recipient group details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "groupId": {
+          "type": "number",
+          "description": "The ID of the recipient group to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "groupId"
+      ]
+    }
+  },
+  {
+    "name": "get_report",
+    "description": "Get detailed information about a specific report by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete report details: name, type, description, schedule (daily/weekly/monthly), recipients, format, data sources (which resources/devices/groups), date range, customization settings, last run timestamp, delivery status. \n\n**When to use:** \n- Review report configuration before modification\n- Check recipients and schedule\n- Verify data sources (which resource/device included)\n- Troubleshoot why report not received\n- Clone report settings for similar report\n\n**Configuration details:** \n- Schedule: When report runs (e.g., \"Every Monday at 8am\")\n- Recipients: Who receives report via email\n- Format: PDF (management), HTML (web), CSV (data analysis)\n- Scope: Which resources/devices/groups are included\n- Date range: Last 7 days, last month, custom period\n\n**Workflow:** Use \"list\\_reports\" to find reportId, then use this tool for complete configuration. \n\n**Related tools:** \"list\\_reports\" (find reports), \"update\\_report\" (modify), \"generate\\_report\" (run now).",
+    "annotations": {
+      "title": "Get report details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "reportId": {
+          "type": "number",
+          "description": "The ID of the report to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "reportId"
+      ]
+    }
+  },
+  {
+    "name": "get_report_group",
+    "description": "Get detailed information about a specific report group by ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete report group details: name, full path, parentId, description, number of reports (direct and total), number of subgroups. \n\n**When to use:**\n- Get group path for documentation\n- Check report membership counts\n- Verify group hierarchy\n- Review group structure before creating reports\n\n\n**Workflow:** Use \"list\\_report\\_groups\" to find groupId, then use this tool for complete details. \n\n**Related tools:** \"list\\_report\\_groups\" (find groups), \"list\\_reports\" (reports in group), \"create\\_report\\_group\" (create new).",
+    "annotations": {
+      "title": "Get report group details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "groupId": {
+          "type": "number",
+          "description": "The ID of the report group to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "groupId"
+      ]
+    }
+  },
+  {
+    "name": "get_resource",
+    "description": "Get detailed information about a specific resource/device in LogicMonitor (LM) monitoring by its ID. \n\n**Returns:** Complete resource/device details including: displayName, IP/hostname, hostStatus, alertStatus, collector assignment, resource/device type, custom properties, applied datasources, group memberships, last data time, creation date. \n\n**When to use:** \n- Get full details after finding resource/device ID via \"list\\_resources\"\n- Check resource/device configuration\n- Verify collector assignment\n- Review custom properties before updating\n\n**Workflow:** Use \"list\\_resources\" or \"search\\_resources\" first to find the deviceId, then use this tool for complete details. \n\n**Related tools:** \"list\\_resource\\_datasources\" (see what's monitored), \"list\\_resource\\_properties\" (view all properties), \"generate\\_resource\\_link\" (get UI link).",
+    "annotations": {
+      "title": "Get resource/device details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "number",
+          "description": "The ID of the resource/device to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "deviceId"
+      ]
+    }
+  },
+  {
+    "name": "get_resource_datasource",
+    "description": "Get detailed information about a specific datasource applied to a resource/device in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete resource/device datasource details: dataSourceName, status, alert status, number of instances, monitoring configuration, stop monitoring flag, custom properties, graphs. \n\n**When to use:**\n- Check if datasource is collecting data\n- Review alert status for specific datasource\n- Verify custom thresholds\n- Get deviceDataSourceId for instance operations\n- Troubleshoot data collection issues\n\n\n**Key fields:** \n- instanceNumber: How many instances (e.g., 4 network interfaces) \n- status: Collection status (normal vs error) \n- alertStatus: Any active alerts from this datasource \n- stopMonitoring: Whether datasource is disabled on this resource/device \n\n**Workflow:** Use \"list\\_device\\_datasources\" to find deviceDataSourceId, then use this tool for detailed status. \n\n**Related tools:** \"list\\_device\\_datasources\" (find datasource), \"list\\_device\\_instances\" (get instances), \"update\\_device\\_datasource\" (enable/disable).",
+    "annotations": {
+      "title": "Get resource/device datasource details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "number",
+          "description": "The resource/device ID"
+        },
+        "deviceDataSourceId": {
+          "type": "number",
+          "description": "The resource/device datasource ID"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "deviceId",
+        "deviceDataSourceId"
+      ]
+    }
+  },
+  {
+    "name": "get_resource_group",
+    "description": "Get detailed information about a specific resource/device group by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete group details: name, full path, parentId, description, custom properties, number of resource/device (direct and total), number of subgroups, alert status, SDT status. \n\n**When to use:** \n- Get group path for documentation\n- Review inherited properties\n- Check group membership counts\n- Verify group hierarchy\n- Get group details before creating resource/device in it\n\n**Key information:** \n- fullPath: Complete hierarchy (e.g., \"/Production/Web Servers/US-East\")\n- customProperties: Properties inherited by all resource/device in group\n- numOfDirectDevices: resources/Devices directly in this group\n- numOfHosts: Total resource/device including subgroups\n- alertStatus: Rollup alert status for entire group\n\n**Custom properties inheritance:** Properties set on group are inherited by ALL resource/device in group. Common uses: \n- Credentials: {name: \"ssh.user\", value: \"monitoring\"}\n- Environment tags: {name: \"env\", value: \"production\"}\n- Owner: {name: \"team\", value: \"platform-engineering\"}\n\n**Workflow:** Use \"list\\_resource\\_groups\" to find groupId, then use this tool for complete details including inherited properties. \n\n**Related tools:** \"list\\_resource\\_groups\" (find groups), \"create\\_resource\\_group\" (create new), \"list\\_resources\" (devices in group).",
+    "annotations": {
+      "title": "Get resource/device group details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "groupId": {
+          "type": "number",
+          "description": "The ID of the resource/device group to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "groupId"
+      ]
+    }
+  },
+  {
+    "name": "get_resource_instance_data",
+    "description": "Get time-series metrics/datapoints data (e.g., CPU/memory/network utilization) for a specific resource/device datasource instance in LogicMonitor (LM) monitoring. \n\n**Returns:** Time-series data with timestamps and values for requested datapoints. Format: {timestamps: [epoch1, epoch2], values: {datapoint1: [val1, val2], datapoint2: [val1, val2]}}. \n\n**When to use:** \n- Get CPU utilization for last 24 hours\n- Fetch disk usage trends\n- Retrieve network bandwidth data\n- Export metrics for analysis\n- Build custom dashboards/reports\n\n**Required workflow (3 steps):** \n- Use \"list\\_resource\\_datasources\" \u2192 get deviceDataSourceId for datasource (e.g., WinCPU)\n- Use \"list\\_resource\\_instances\" \u2192 get instanceId for specific instance (e.g., CPU Core 0)\n- Use this tool \u2192 get actual metric values for that instance\n\n**Parameters:** \n- deviceId: Device ID from \"get\\_resource\" or \"list\\_resources\"\n- deviceDataSourceId: From \"get\\_resource\\_datasource\" or \"list\\_resource\\_datasources\"\n- instanceId: From \"list\\_resource\\_instances\"\n- datapoints: Comma-separated metric names (e.g., \"CPUBusyPercent,MemoryUsedPercent\")\n- start/end: Time range in epoch milliseconds (not seconds!), start time must be before current time\n\n**Example:** Get last hour CPU data: start=Date.now()-3600000, end=Date.now() \n\n**Time range tips:** If omitted, returns last 2 hours. Max range: 1 year. Use shorter ranges for better performance. \n\n**Related tools:** \"list\\_resource\\_datasources\", \"list\\_resource\\_instances\".",
+    "annotations": {
+      "title": "Get time-series metric data",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "number",
+          "description": "The resource/device ID"
+        },
+        "deviceDataSourceId": {
+          "type": "number",
+          "description": "The resource/device datasource ID"
+        },
+        "instanceId": {
+          "type": "number",
+          "description": "The instance ID"
+        },
+        "datapoints": {
+          "type": "string",
+          "description": "Comma-separated list of metric/datapoint names"
+        },
+        "start": {
+          "type": "number",
+          "description": "Start time (epoch milliseconds), start time must be before current time"
+        },
+        "end": {
+          "type": "number",
+          "description": "End time (epoch milliseconds)"
+        },
+        "format": {
+          "type": "string",
+          "description": "Response format: \"json\" or \"csv\""
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "deviceId",
+        "deviceDataSourceId",
+        "instanceId"
+      ]
+    }
+  },
+  {
+    "name": "get_role",
+    "description": "Get detailed information about a specific role by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete role details: name, description, custom flag, detailed permission matrix (view/manage/delete/acknowledge for each area: resources/devices, alerts, dashboards, reports, settings, users). \n\n**When to use:** \n- Review exact permissions before assigning role\n- Compare roles to choose correct one\n- Document security policies\n- Audit what a role can/cannot do\n- Before creating custom role (use as template)\n\n**Permission granularity returned:** \n- Resources: Can view/add/modify/delete resource/device\n- Alerts: Can view/acknowledge/manage alert rules\n- Dashboards: Can view/create/edit/delete dashboards\n- Reports: Can view/create/schedule reports\n- Settings: Can modify datasources/collectors/integrations\n- Users: Can manage other users/roles\n\n**Use cases:** \n- Security audit: \"Can this role delete production resources/devices?\"\n- Least privilege: Choose role with minimal required permissions\n- Documentation: Export role permissions for compliance\n- Role comparison: Compare multiple roles to find right fit\n\n**Workflow:** Use \"list\\_roles\" to find roleId, then use this tool to review detailed permissions before assigning to users. \n\n**Related tools:** \"list\\_roles\" (find roles), \"list\\_users\" (see who has this role), \"create\\_role\" (create custom role).",
+    "annotations": {
+      "title": "Get role details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "roleId": {
+          "type": "number",
+          "description": "The ID of the role to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "roleId"
+      ]
+    }
+  },
+  {
+    "name": "get_sdt",
+    "description": "Get detailed information about a specific Scheduled Down Time (SDT) by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete SDT details: type, device/group affected, start/end times, duration, comment, who created it, status (active/scheduled/expired), recurrence settings. \n\n**When to use:** \n- Verify SDT was created correctly\n- Check when maintenance window ends\n- See who scheduled downtime\n- Get SDT details before extending/canceling\n- Audit maintenance history\n\n**Status meanings:** \n- scheduled: Future maintenance window (not started yet)\n- active: Currently in maintenance window (alerts suppressed now)\n- expired: Maintenance window completed (historical record)\n\n**Workflow:** Use \"list\\_sdts\" to find SDT ID, then use this tool for complete details before deciding to extend or delete. \n\n**Related tools:** \"list\\_sdts\" (find SDTs), \"create\\_resource\\_sdt\" (create new), \"delete\\_sdt\" (cancel).",
+    "annotations": {
+      "title": "Get Scheduled Down Time details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sdtId": {
+          "type": "string",
+          "description": "The ID of the Scheduled Down Time (SDT) to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "sdtId"
+      ]
+    }
+  },
+  {
+    "name": "get_service",
+    "description": "Get detailed information about a specific service by ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete service details: name, description, health status, dependency tree (all resources comprising service), SLA/SLO configuration, availability statistics, alert rules, service group. \n\n**When to use:**\n- Review service dependencies (what resources are included)\n- Check current health status and root cause\n- Verify SLA/SLO configuration\n- Troubleshoot service downtime\n- Understand service architecture\n\n\n**Key information returned:** \n- **Dependency tree:** All resources/devices/resources that comprise this service \n- **Health calculation:** How service status is determined (e.g., \"If ANY web server is down, service is degraded\") \n- **Current status:** Operational / Degraded / Down \n- **SLA metrics:** Uptime percentage, outage history \n- **Alert configuration:** When to alert on service issues \n\n**Troubleshooting workflow:** Service shows \"Down\" \u2192 Check dependency tree \u2192 Identify which specific resource(s) failed \u2192 Address those resources \u2192 Service auto-recovers when dependencies healthy \n\n**Workflow:** Use \"list\\_services\" to find serviceId, then use this tool for complete dependency analysis. \n\n**Related tools:** \"list\\_services\" (find service), \"update\\_service\" (modify dependencies), \"list\\_resources\" (see health of dependent resources).",
+    "annotations": {
+      "title": "Get service details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "serviceId": {
+          "type": "number",
+          "description": "The ID of the service to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "serviceId"
+      ]
+    }
+  },
+  {
+    "name": "get_service_group",
+    "description": "Get detailed information about a specific service group by ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete service group details: name, full path, parentId, description, number of services (direct and total), number of subgroups. \n\n**When to use:**\n- Get group path for documentation\n- Check service membership counts\n- Verify group hierarchy\n- Review group structure before creating services\n\n\n**Workflow:** Use \"list\\_service\\_groups\" to find groupId, then use this tool for complete details. \n\n**Related tools:** \"list\\_service\\_groups\" (find groups), \"list\\_services\" (services in group), \"create\\_service\\_group\" (create new).",
+    "annotations": {
+      "title": "Get service group details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "groupId": {
+          "type": "number",
+          "description": "The ID of the service group to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "groupId"
+      ]
+    }
+  },
+  {
+    "name": "get_topology",
+    "description": "Get network topology information in LogicMonitor (LM) monitoring. \n\n**Returns:** Network topology data with: resource/device relationships, network connections, parent-child hierarchies, Layer 2/Layer 3 connectivity maps. \n\n**What is topology:** Automatically discovered network relationship map showing how resource/device connect to each other. LogicMonitor uses SNMP, CDP (Cisco Discovery Protocol), LLDP (Link Layer Discovery Protocol), and other methods to build network topology maps. \n\n**When to use:**\n- Understand network architecture and resource/device relationships\n- Visualize network connectivity\n- Plan network changes\n- Troubleshoot connectivity issues\n- Document network infrastructure\n\n\n**Topology information includes:** \n- **Physical connections:** Which resource/device are physically connected (switch ports, router interfaces) \n- **Logical relationships:** Parent-child relationships (gateway \u2192 firewall \u2192 switches \u2192 servers) \n- **Layer 2 topology:** MAC address tables, VLANs, switch port connections \n- **Layer 3 topology:** IP routing, subnets, default gateways \n\n**Use cases:** \n- **Network visualization:** See how your network is structured \n- **Impact analysis:** \"If this switch fails, what resource/device lose connectivity?\" \n- **Capacity planning:** Identify network bottlenecks and heavily-utilized links \n- **Documentation:** Auto-generated network diagrams \n- **Troubleshooting:** Trace connection paths between resource/device \n\n**How LogicMonitor discovers topology:** \n- CDP/LLDP: Cisco and other vendors broadcast neighbor information \n- SNMP: Query resource/device interface tables, ARP tables, routing tables \n- Traceroute: Active probing to discover paths \n- Parent/child relationships: Based on gateway configuration \n\n**Related tools:** \"list\\_resources\" (view resources/devices), \"get\\_resource\" (device details including connections).",
+    "annotations": {
+      "title": "Get network topology",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "get_user",
+    "description": "Get detailed information about a specific user by their ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete user details: username, email, firstName, lastName, roles (permissions), status (active/suspended), last login time, created date, phone, timezone, API token count, two-factor auth status. \n\n**When to use:** \n- Review user permissions and roles\n- Check last login time (identify inactive users)\n- Verify contact information\n- Audit user access before modification\n- Get user details for API token management\n\n**Key information:** \n- roles: Array of role names (defines permissions)\n- status: \"active\" (can login) vs \"suspended\" (access revoked)\n- lastLoginOn: Epoch timestamp (identify inactive accounts)\n- apiTokens: Number of active API tokens\n- twoFAEnabled: Whether 2FA is configured\n\n**Security audit use cases:** \n- Find users who haven't logged in for 90+ days\n- Review which users have admin roles\n- Check if former employees still have access\n- Verify API token usage per user\n\n**Workflow:** Use \"list\\_users\" to find userId, then use this tool for complete user profile. \n\n**Related tools:** \"list\\_users\" (find user), \"list\\_roles\" (see available roles), \"list\\_api\\_tokens\" (view user's tokens), \"update\\_user\" (modify).",
+    "annotations": {
+      "title": "Get user details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "number",
+          "description": "The ID of the user to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "userId"
+      ]
+    }
+  },
+  {
+    "name": "get_website",
+    "description": "Get detailed information about a specific website monitor by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete website monitor details: name, type (webcheck/pingcheck), domain/URL, monitoring configuration, checkpoint locations, response time thresholds, SSL settings, authentication, custom headers, alert status. \n\n**When to use:** \n- Review monitoring configuration\n- Check checkpoint locations\n- Verify URL and settings\n- Troubleshoot failed checks\n- Audit SSL certificate monitoring\n\n**Configuration details returned:** \n- steps: Multi-step transaction monitoring (for complex workflows)\n- checkpoints: Which global locations perform checks (e.g., US-East, EU-West, Asia-Pacific)\n- schema: HTTP vs HTTPS\n- testLocation: Internal (from collector) vs External (from cloud)\n- responseTimeThreshold: Alert if slower than X ms\n- sslCertExpirationDays: Alert X days before cert expires\n\n**Use cases:** \n- Verify website is monitored from correct geographic locations\n- Check if SSL certificate expiration monitoring is enabled\n- Review response time thresholds (too strict? too lenient?)\n- Troubleshoot why website checks are failing\n- Document what endpoints are monitored\n\n**Workflow:** Use \"list\\_websites\" to find websiteId, then use this tool for complete monitoring configuration. \n\n**Related tools:** \"list\\_websites\" (find website), \"update\\_website\" (modify), \"generate\\_website\\_link\" (get URL), \"list\\_website\\_checkpoints\" (available locations).",
+    "annotations": {
+      "title": "Get website monitor details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "websiteId": {
+          "type": "number",
+          "description": "The ID of the website to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "websiteId"
+      ]
+    }
+  },
+  {
+    "name": "get_website_group",
+    "description": "Get detailed information about a specific website group by its ID in LogicMonitor (LM) monitoring. \n\n**Returns:** Complete website group details: name, full path, parentId, description, number of websites (direct and total), number of subgroups, alert status. \n\n**When to use:** \n- Get group path for documentation\n- Check website membership counts\n- Verify group hierarchy\n- Review group structure before creating monitors\n\n**Workflow:** Use \"list\\_website\\_groups\" to find groupId, then use this tool for complete details. \n\n**Related tools:** \"list\\_website\\_groups\" (find groups), \"list\\_websites\" (websites in group), \"create\\_website\\_group\" (create new).",
+    "annotations": {
+      "title": "Get website group details",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "groupId": {
+          "type": "number",
+          "description": "The ID of the website group to retrieve"
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "groupId"
+      ]
+    }
+  },
+  {
+    "name": "list_access_groups",
+    "description": "List all access groups in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of access groups with: id, name, description, tenant ID, number of associated resources, number of users. \n\n**What are access groups:** Permission boundaries that control WHICH resources users can see and manage. Used in multi-tenant environments to isolate customer data, or to segment access by team/department. Users assigned to access group can only see resources in that group. \n\n**When to use:** \n- Manage multi-tenant environments (MSPs)\n- Segment monitoring by department/team\n- Control resource visibility\n- Audit access control configuration\n- Find access group IDs for user assignment\n\n**Access groups vs Roles (important distinction):** \n- **Access Groups:** Control WHAT resources you can see (visibility, data isolation)\n- **Roles:** Control WHAT actions you can perform (view/edit/delete permissions)\n- Users need BOTH: Role (what they can do) + Access Group (what they can see)\n\n**Common use cases:** \n\n**MSP / Multi-tenant:** \n- Access Group \"Customer A\" - User sees only Customer A resource/device\n- Access Group \"Customer B\" - User sees only Customer B resource/device\n- Prevents customers from seeing each other's data\n\n**Departmental isolation:** \n- Access Group \"Network Team\" - See only network resource/device\n- Access Group \"Server Team\" - See only servers\n- Access Group \"Database Team\" - See only database servers\n\n**Environment separation:** \n- Access Group \"Production\" - Only prod resource/device\n- Access Group \"Dev/Test\" - Only non-prod resource/device\n- Junior staff limited to dev/test access group\n\n**Workflow:** Use this tool to find access groups, then assign users to groups via \"update\\_user\" to control resource visibility. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_access\\_group\" (details), \"create\\_access\\_group\" (create new), \"list\\_users\" (see user assignments), \"list\\_resources\" (associate resource/device with groups).",
+    "annotations": {
+      "title": "List access groups",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_alert_rules",
+    "description": "List all alert rules in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of alert rules with: id, name, priority, enabled status, matching conditions (device/datasource/severity filters), escalation chain assigned, suppression settings. \n\n**What are alert rules:** The ROUTING LOGIC that determines \"which alerts go to which people.\" Act as traffic directors: \"IF alert matches these conditions, THEN send to this escalation chain.\" Rules are evaluated in priority order (1st match wins). \n\n**When to use:**\n- Audit who gets notified for different alert types\n- Understand notification routing logic\n- Find rule IDs for modifications\n- Troubleshoot \"why didn't I get alerted?\"\n- Document alert notification policies\n\n\n**How alert rules work:** Alert triggers \u2192 Rules evaluated in priority order \u2192 First matching rule wins \u2192 Routes alert to that rule's escalation chain \u2192 Escalation chain notifies recipients \n\n**Common alert rule patterns:** \n- **Priority 1 (Critical Production):** IF resource/device in \"Production\" group AND severity = critical \u2192 Route to \"Critical On-Call\" escalation chain \n- **Priority 2 (Database Team):** IF datasource contains \"MySQL\" OR \"PostgreSQL\" \u2192 Route to \"Database Team\" escalation chain \n- **Priority 3 (Business Hours):** IF severity = warning \u2192 Route to \"Business Hours Email\" chain (no pages) \n- **Priority 99 (Catch-All):** IF any alert not matched above \u2192 Route to \"Default NOC\" escalation chain \n\n**Use cases:** \n- \"Who gets paged for production CPU alerts?\" \u2192 Find rule matching prod resources/devices+ CPU datasource \n- \"Update team notifications\" \u2192 Modify alert rule to route to different escalation chain \n- \"Stop getting low-priority pages\" \u2192 Check which rule routes those alerts, adjust severity or chain \n\n**Critical for notification troubleshooting:** If alerts aren't reaching people, check:\n- Does alert match any rule?\n- Is matched rule enabled?\n- Is escalation chain configured correctly?\n\n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_alert\\_rule\" (detailed conditions), \"list\\_escalation\\_chains\" (destination chains), \"update\\_alert\\_rule\" (modify routing).",
+    "annotations": {
+      "title": "List alert rules",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_alerts",
+    "description": "List active alerts in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of alerts with: id (alertId), severity (critical/error/warning), resource name, datasource, datapoint, alert message, start time (startEpoch), acknowledgement status (acked), alert rule. \n\n**When to use:** \n- Get all critical production alerts\n- Find unacknowledged alerts needing attention\n- Monitor specific service health\n- Check CPU/memory alerts\n- Generate alert reports\n\n**Two search modes:** \n- **Simple search:** Use query parameter with free text (e.g., query:\"prod-web-01\") - searches by resource/device name (monitorObjectName field)\n- **Advanced filtering:** Use filter parameter with LM filter syntax (e.g., filter:\"severity:critical,acked:false\") for precise control\n\n**Common filter patterns:** \n- Critical alerts: filter:\"severity:critical\"\n- Unacknowledged: filter:\"acked:false\"\n- Specific device: filter:\"monitorObjectName\\~\\*prod-web-01\\*\"\n- CPU alerts: filter:\"resourceTemplateName\\~\\*CPU\\*\"\n- Recent alerts: filter:\"startEpoch>1730851200\" (epoch seconds)\n- Combined: filter:\"severity:critical,acked:false\" (AND logic)\n\n**Query vs Filter:** \n- query: Simple text search by resource/device name only (e.g., query:\"production\", query:\"k8s-cluster\")\n- filter: Precise LM filter syntax with any alert field. Use for severity, acked status, etc.\n- If both provided, query is converted to filter and combined with provided filter using AND logic\n\n**Important:** Alert API does NOT support OR operator (||). Use comma for AND only. For complex queries, make multiple calls. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_alert\" (full details), \"acknowledge\\_alert\" (acknowledge), \"add\\_alert\\_note\" (add notes), \"generate\\_alert\\_link\" (get URL).",
+    "annotations": {
+      "title": "List alerts",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Simple search query. Free text (e.g., \"prod-web-01\", \"k8s-cluster\") searches by resource/device name (monitorObjectName). Can also use filter syntax (e.g., \"severity:critical\") which gets formatted automatically."
+        },
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        },
+        "needMessage": {
+          "type": "boolean",
+          "description": "Whether to include alert message details",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_api_tokens",
+    "description": "List API tokens for a specific user in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of API tokens for specified user with: id, note (description), created date, last used date, status (active/inactive), access ID, roles inherited from user. \n\n**What are API tokens:** Authentication credentials for LogicMonitor REST API. Alternative to username/password for programmatic access. Each token inherits permissions from its user. \n\n**When to use:** \n- Audit API access per user\n- Find unused/stale tokens for security cleanup\n- Check last usage time\n- Inventory API integrations\n- Before creating new token (check if existing one available)\n\n**Security considerations:** \n- Each token has Access ID and Access Key (like username/password for API)\n- Token inherits all permissions from user (if user is admin, token has admin rights)\n- Tokens never expire automatically (must be manually revoked)\n- Last used date helps identify unused tokens that should be removed\n\n**Common use cases:** \n- **Security audit:** \"Find all API tokens, check last usage, remove stale ones\"\n- **Integration tracking:** \"Which integrations are using this user's tokens?\"\n- **Access review:** \"What API access does this user have?\"\n- **Token rotation:** \"List all tokens before rotating credentials\"\n\n**Best practices:** \n- Create service accounts (dedicated users) for API integrations instead of personal user tokens\n- Add descriptive notes to tokens (e.g., \"Terraform automation\", \"Grafana integration\")\n- Regularly audit and remove unused tokens (check lastUsedOn timestamp)\n- Use least-privilege: Create users with minimal required permissions, then create tokens for those users\n\n**Security workflow:** \n- List all users with \"list\\_users\"\n- For each user, use this tool to check their API tokens\n- Review lastUsedOn - if >90 days, consider revoking\n- Check note field to understand token purpose\n\n**Workflow:** Use this tool with userId from \"list\\_users\" to audit that user's API access. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"list\\_users\" (find userId), \"create\\_api\\_token\" (generate new), \"delete\\_api\\_token\" (revoke access).",
+    "annotations": {
+      "title": "Get API tokens",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "number",
+          "description": "The user ID"
+        },
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "userId"
+      ]
+    }
+  },
+  {
+    "name": "list_audit_logs",
+    "description": "List audit logs in LogicMonitor (LM) monitoring for compliance and security auditing. \n\n**Returns:** Array of audit log entries with: id, username, IP address, timestamp (happenedOn in epoch SECONDS), description of action performed, sessionId. \n\n**When to use:** \n- Investigate changes: \"Who deleted this resource/device?\" \u2192 filter:\"description~\\*Delete\\*,description~\\*device\\*\"\n- Track user activity: \"What did john.doe do today?\" \u2192 filter:\"username:john.doe,happenedOn>1730851200\"\n- Monitor API usage: Find actions performed via API tokens\n- Compliance audits: Export log history for specific time periods\n- Security investigation: Track login attempts, IP addresses, suspicious activities\n- Troubleshooting: \"Who changed this alert rule?\" \u2192 filter:\"description~\\*AlertRule\\*\"\n\n**Two search modes:** \n- **Simple search:** Use query parameter with free text (e.g., query:\"john.doe\", query:\"device\") - searches across username, description, and IP fields\n- **Advanced filtering:** Use filter parameter with LM filter syntax (e.g., filter:\"username:admin,happenedOn>1640995200\") for precise control\n\n**Common filter patterns:** \n- By user: filter:\"username:john.doe\"\n- By time: filter:\"happenedOn>1640995200\" (IMPORTANT: epoch SECONDS, not milliseconds!)\n- By action type: filter:\"description~\\*Create\\*\" or filter:\"description~\\*Delete\\*\" or filter:\"description~\\*Update\\*\"\n- By resource: filter:\"description~\\*device\\*\" or filter:\"description~\\*dashboard\\*\"\n- By IP: filter:\"ip:192.168.1.100\"\n- Combined (AND): filter:\"username:admin,happenedOn>1640995200,description~\\*device\\*\"\n\n**Query vs Filter:** \n- query: Simple text search across username, description, IP (OR logic). Use for quick lookups: query:\"john.doe\", query:\"device\"\n- filter: Precise LM filter syntax with any field. Use for time ranges, exact matches: filter:\"happenedOn>1640995200\"\n- If both provided, query is converted to filter and combined with provided filter using AND logic\n\n**Critical notes:** \n- Time uses epoch SECONDS (not milliseconds like other LM APIs)\n- Cannot use OR operator (||) in audit logs, only AND (comma)\n- Use autoPaginate:true for complete history (may take time for large datasets)\n\n**Web UI access:** https://test.logicmonitor.com/santaba/uiv4/settings/access-logs (Settings \u2192 Audit Logs) \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_audit\\_log\" (details of specific entry).",
+    "annotations": {
+      "title": "List audit logs",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Simple search query. Free text (e.g., \"john.doe\", \"device\", \"192.168.1.100\") automatically searches across username, description, and IP fields. Can also use filter syntax (e.g., \"username:admin\") which gets formatted automatically."
+        },
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_collector_groups",
+    "description": "List all collector groups (folders) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of collector groups with: id, name, parentId, full path, description, number of collectors, number of subgroups. \n\n**What are collector groups:** Organizational folders for collectors (monitoring agents), similar to resource/device groups. Used to categorize collectors by location, function, or customer. \n\n**When to use:**\n- Browse collector organization\n- Find group IDs for collector operations\n- Understand collector deployment structure\n- Navigate to specific collector folders\n\n\n**Common organization patterns:** \n- By location: \"US-West Collectors\", \"EU Collectors\", \"APAC Collectors\" \n- By environment: \"Production Collectors\", \"Dev/Test Collectors\" \n- By customer: \"Customer A Collectors\", \"Customer B Collectors\" (MSP) \n- By datacenter: \"DC1 Collectors\", \"DC2 Collectors\", \"AWS Collectors\" \n- By function: \"Network Collectors\", \"Server Collectors\", \"Cloud Collectors\" \n\n**Use cases:** \n- Organize collectors by geographic region \n- Group collectors by customer or tenant \n- Separate production vs non-production collectors \n- Structure multi-datacenter collector deployments \n\n**Workflow:** Use this tool to browse hierarchy, then \"list\\_collectors\" filtered by groupId to see collectors in specific folder. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_collector\\_group\" (details), \"list\\_collectors\" (collectors in group), \"create\\_collector\\_group\" (create folder).",
+    "annotations": {
+      "title": "List collector groups",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_collector_versions",
+    "description": "List available collector versions in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of collector versions with: version number, release date, stability level (GA/EA/RC), changelog summary, download size, platform support (Windows/Linux), mandatory/recommended flag. \n\n**What are collector versions:** Software releases for LogicMonitor collector agents. Collectors are installed on your infrastructure to gather monitoring data. Staying current ensures latest features, bug fixes, and security patches. \n\n**When to use:**\n- Check for collector updates\n- Review changelog before upgrading\n- Find specific version for rollback\n- Verify platform compatibility\n- Plan maintenance windows for collector upgrades\n\n\n**Version types:** \n- **GA (Generally Available):** Production-ready, stable, recommended \n- **EA (Early Adopter):** Beta, new features, use in non-production first \n- **RC (Release Candidate):** Pre-GA testing version \n- **Mandatory:** Critical security/bug fixes, upgrade required \n\n**Collector update workflow:** 1. Use this tool to check available versions 2. Review changelog for breaking changes 3. Test new version on non-production collector first 4. Use \"get\\_collector\" to check current version on your collectors 5. Update collectors via LogicMonitor UI or API 6. Monitor collector health after upgrade \n\n**Version numbering:** Format is typically X.Y.Z (e.g., 34.100.0) where: \n- X = Major release (significant changes) \n- Y = Minor release (features, improvements) \n- Z = Patch release (bug fixes) \n\n**Best practices:** \n- Keep collectors within 2-3 versions of latest GA release \n- Subscribe to release notifications for critical updates \n- Test EA versions in lab before production \n- Upgrade during maintenance windows (may briefly interrupt monitoring) \n- Stagger upgrades (don't upgrade all collectors simultaneously) \n\n**Common scenarios:** \n- \"Check if newer version available\" \u2192 Compare latest version to your collectors \n- \"Plan upgrade\" \u2192 Review changelog, schedule maintenance \n- \"Rollback needed\" \u2192 Find previous stable version \n- \"Platform migration\" \u2192 Verify version supports new OS \n\n**Related tools:** \"get\\_collector\" (check current version on collector), \"list\\_collectors\" (find collectors to upgrade).",
+    "annotations": {
+      "title": "List collector versions",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0)."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_collectors",
+    "description": "List all LogicMonitor (LM) monitoring collectors (monitoring agents). \n\n**Returns:** Array of collectors with: id, description (collector name), hostname, platform (Windows/Linux), status (alive/dead), build version, number of monitored resources/devices, last heartbeat time. \n\n**When to use:** \n- Check collector health status before adding resources/devices\n- Find available collectors for new resource/device assignments\n- Monitor collector capacity and load\n- Identify offline/dead collectors\n\n**What are collectors:** Lightweight agents installed on-premise or in cloud that collect metrics from resources/devices. Each resource/device must be assigned to one collector. \n\n**Common filter patterns:** \n- Alive collectors: filter:\"status:alive\"\n- By platform: filter:\"platform:Linux\" or filter:\"platform:Windows\"\n- By name: filter:\"description\\~\\*prod\\*\"\n- Low capacity: filter:\"numberOfHosts<100\"\n\n**Before creating resources/devices:** Use this tool to find collectorId for the \"preferredCollectorId\" parameter in \"create\\_resource\". \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_collector\" (details), \"list\\_collector\\_groups\" (browse groups), \"list\\_collector\\_versions\" (check updates).",
+    "annotations": {
+      "title": "List collectors",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_configsources",
+    "description": "List all ConfigSources in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of ConfigSources with: id, name, displayName, description, appliesTo logic, collection method. \n\n**What are ConfigSources:** Track configuration file changes for compliance and change management. Similar to datasources, but for configs instead of metrics. Alert when configs change unexpectedly. \n\n**When to use:** \n- Find ConfigSource for specific resource/device type (e.g., Cisco\\_IOS\\_Config)\n- Discover what configs are being tracked\n- Get ConfigSource IDs for API operations\n- Audit configuration monitoring coverage\n\n**What configs can be tracked:** \n- Network resources/devices: Router configs, switch configs, firewall rules\n- Linux: /etc files, app configs, SSH authorized_keys\n- Windows: Registry keys, security policies\n- Cloud: Security groups, IAM policies\n\n**Use cases:** \n- Compliance: \"Alert when firewall rules change\"\n- Change management: \"Who modified this router config?\"\n- Rollback: Compare current config to previous version\n- Audit: \"Show all config changes in last 30 days\"\n\n**Common ConfigSources:** \n- Cisco\\_IOS_Config: Cisco router/switch configs\n- F5\\_LTM\\_Config: F5 load balancer configs\n- Palo\\_Alto\\_Config: Palo Alto firewall rules\n- Linux\\_Config\\_Files: Monitor /etc files\n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_configsource\" (details), \"list\\_device\\_configs\" (see configs for device).",
+    "annotations": {
+      "title": "List ConfigSources",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_dashboard_groups",
+    "description": "List all dashboard groups (folders) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of dashboard groups with: id, name, parentId, full path, description, number of dashboards, number of subgroups, owner. \n\n**What are dashboard groups:** Organizational folders for dashboards, like directories in a file system. Used to organize dashboards by team, function, or application. \n\n**When to use:** \n- Browse dashboard organization before creating/moving dashboards\n- Find group IDs for dashboard operations\n- Understand dashboard hierarchy\n- Navigate to specific dashboard folders\n\n**Common organization patterns:** \n- By team: \"Platform Team\", \"Database Team\", \"Network Team\"\n- By environment: \"Production\", \"Staging\", \"Development\"\n- By application: \"Web App\", \"API Services\", \"Background Jobs\"\n- By cloud provider: \"AWS Dashboards\", \"Azure Dashboards\"\n\n**Workflow:** Use this tool to browse hierarchy, then \"list\\_dashboards\" filtered by groupId to see dashboards in specific folder. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_dashboard\\_group\" (details), \"list\\_dashboards\" (dashboards in group), \"create\\_dashboard\\_group\" (create folder).",
+    "annotations": {
+      "title": "List dashboard groups",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_dashboards",
+    "description": "List all dashboards in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of dashboards with: id, name, description, groupId, groupName, widget count, owner. \n\n**When to use:** \n- Find AWS/Azure/infrastructure dashboards\n- Discover available pre-built dashboards\n- Get dashboard IDs for generating links\n- List dashboards in specific group\n\n**Common filter patterns:** \n- By name: filter:\"name\\~\\*AWS\\*\" (find all AWS dashboards)\n- By group: filter:\"groupId:5\" or filter:\"groupName\\~\\*Cloud\\*\"\n- By owner: filter:\"owner:john.doe\"\n\n**Next step:** Use \"generate\\_dashboard\\_link\" with the dashboard ID to get the full clickable URL for sharing. \n\n**Tip:** Dashboards are organized in groups. Use \"list\\_dashboard\\_groups\" to browse the hierarchy. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_dashboard\" (details), \"generate\\_dashboard\\_link\" (get URL), \"list\\_dashboard\\_groups\" (browse hierarchy).",
+    "annotations": {
+      "title": "List dashboards",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_datasources",
+    "description": "List all available datasources in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of datasources with: id, name, displayName, description, appliesTo (which resource/device it monitors), collection method, datapoints/metrics collected. \n\n**What are datasources:** Templates that define WHAT to monitor (e.g., CPU, memory, disk), HOW to collect it (SNMP, WMI, API), and WHEN to alert. LogicMonitor has 2000+ pre-built datasources for common technologies. \n\n**When to use:** \n- Find datasource for specific technology (e.g., \"AWS\\_EC2\", \"VMware\\_vCenter\")\n- Discover what can be monitored\n- Get datasource IDs for API operations\n- Browse monitoring capabilities\n\n**Common filter patterns:** \n- By name: filter:\"name\\~\\*CPU\\*\" or filter:\"displayName\\~\\*Memory\\*\"\n- Cloud providers: filter:\"name\\~\\*AWS\\*\" or filter:\"name\\~\\*Azure\\*\"\n- Database: filter:\"name\\~\\*MySQL\\*\" or filter:\"name\\~\\*SQL\\_Server\\*\"\n- Network: filter:\"name\\~\\*Cisco\\*\" or filter:\"name\\~\\*SNMP\\*\"\n\n**Examples:** AWS\\_EC2 (monitors EC2 instances), SNMP\\_Network\\_Interfaces (network stats), WinCPU (Windows CPU), Linux\\_SSH (Linux via SSH). \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_datasource\" (details), \"list\\_resource\\_datasources\" (see what's applied to specific resource/device).",
+    "annotations": {
+      "title": "List datasources",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_escalation_chains",
+    "description": "List all escalation chains in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of escalation chains with: id, name, description, escalation stages, recipients at each stage, timing/delays, enabled status. \n\n**What are escalation chains:** Define HOW and WHO gets notified when alerts trigger. Multi-stage notification workflows: Stage 1 (notify team lead immediately) \u2192 Stage 2 (if still open after 15 min, notify manager) \u2192 Stage 3 (if still open after 30 min, page director). \n\n**When to use:**\n- Audit notification routing\n- Find escalation chain IDs for alert rule configuration\n- Review who gets notified for critical alerts\n- Verify on-call escalation paths\n\n\n**How escalation chains work:** Alert triggers \u2192 Alert Rule matches \u2192 Routes to Escalation Chain \u2192 Stage 1 notifies immediately \u2192 Wait X minutes \u2192 If still alerting, Stage 2 notifies \u2192 Repeat through stages \n\n**Common escalation patterns:** \n- **Critical Production:** Stage 1: On-call engineer (0 min) \u2192 Stage 2: Team lead (15 min) \u2192 Stage 3: Engineering manager (30 min) \n- **Standard:** Stage 1: Team email (0 min) \u2192 Stage 2: PagerDuty (30 min) \n- **Business Hours Only:** Stage 1: Team Slack (0 min, 8am-6pm only) \n\n**Use cases:** \n- \"Who gets paged for critical database alerts?\" \u2192 Check escalation chain \n- \"Why didn't I get notified?\" \u2192 Verify you're in the escalation chain \n- \"Update on-call rotation\" \u2192 Modify escalation chain recipients \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_escalation\\_chain\" (detailed stages), \"list\\_alert\\_rules\" (see which rules use chain), \"list\\_recipients\" (available notification targets).",
+    "annotations": {
+      "title": "List escalation chains",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_eventsources",
+    "description": "List all EventSources in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of EventSources with: id, name, displayName, description, appliesTo logic, event collection method. \n\n**What are EventSources:** Collect and process event data (logs, Windows events, syslog, traps). Different from DataSources (metrics) and ConfigSources (configs). Used for log monitoring and event correlation. \n\n**When to use:**\n- Find EventSource for log monitoring\n- Discover what events are being collected\n- Get EventSource IDs for operations\n- Audit event monitoring coverage\n\n\n**Event types collected:** \n- Windows Event Logs: Application, Security, System logs \n- Syslog: Linux/Unix system logs, network resource/device logs \n- SNMP Traps: Network resource/device alerts and notifications \n- Application logs: Custom app logs, web server logs \n- Cloud events: CloudWatch logs, Azure events \n\n**Common EventSources:** \n- Windows\\_Application\\_EventLog: Windows application events \n- Windows\\_Security\\_EventLog: Security/audit logs \n- Linux\\_Syslog: Linux system logs via syslog \n- SNMP\\_Traps: Network resource/device SNMP traps \n- VMware\\_Events: vCenter events \n\n**Use cases:** \n- Monitor Windows failed login attempts \n- Alert on ERROR/CRITICAL in application logs \n- Collect network resource/device syslog for troubleshooting \n- Track security events for compliance \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_eventsource\" (details), \"list\\_device\\_eventsources\" (events for device).",
+    "annotations": {
+      "title": "List EventSources",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_integrations",
+    "description": "List all third-party integrations configured in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of integrations with: id, name, type (Slack/PagerDuty/ServiceNow/Jira/etc), status (active/inactive), configuration summary, authentication status. \n\n**What are integrations:** Connections to external platforms for alert notifications, ticket creation, chat messages, incident management. Extend LogicMonitor alerting beyond email/SMS. \n\n**When to use:**\n- Find integration IDs for escalation chains\n- Verify integrations are working\n- Audit external connections\n- Check authentication status\n- Review available integration options\n\n\n**Popular integrations:** \n\n**Incident Management:** \n- **PagerDuty:** Page on-call engineers for critical alerts \n- **Opsgenie:** Alternative incident management and on-call scheduling \n- **VictorOps (Splunk On-Call):** Alert routing and escalation \n\n**Ticketing:** \n- **ServiceNow:** Auto-create incidents for alerts \n- **Jira:** Create tickets for infrastructure issues \n- **Zendesk:** Customer-facing service desk integration \n\n**Collaboration:** \n- **Slack:** Post alerts to channels, interactive notifications \n- **Microsoft Teams:** Teams channel notifications \n- **Mattermost:** Self-hosted chat notifications \n\n**Workflow & Automation:** \n- **Webhooks:** Custom integrations to any HTTP endpoint \n- **API:** Programmatic integration for custom workflows \n\n**Use cases:** \n- \"Post critical production alerts to #incidents Slack channel\" \n- \"Auto-create ServiceNow ticket for every critical alert\" \n- \"Page PagerDuty when datacenter resource/device go offline\" \n- \"Update Jira epic when deployment causes alerts\" \n\n**Integration status:** \n- Active: Integration configured and working \n- Inactive: Disabled or authentication failed \n- Test: Verify integration by triggering test notification \n\n**Workflow:** Use this tool to find integrations, then use in escalation chains or as webhook recipients for alert delivery. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_integration\" (configuration details), \"test\\_integration\" (verify working), \"list\\_escalation\\_chains\" (see usage).",
+    "annotations": {
+      "title": "List integrations",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_netscans",
+    "description": "List all network discovery scans (NetScans) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of netscans with: id, name, description, scan method (nmap/script/ICMP/SNMP), schedule, target networks (IP ranges/subnets), collector, last run time, resource/device discovered. \n\n**What are netscans:** Automated network discovery that finds resource/device on your network and adds them to monitoring. Instead of manually adding resource/device one-by-one, netscan automatically discovers and onboards resource/device based on IP ranges or subnets. \n\n**When to use:**\n- Audit existing discovery configurations\n- Check which networks are being scanned\n- Review netscan schedules\n- Troubleshoot why resource/device not auto-discovered\n- Find netscan IDs for modifications\n\n\n**How netscans work:** Scheduled job \u2192 Scan network range (e.g., 192.168.1.0/24) \u2192 Find live resource/device \u2192 Check if already monitored \u2192 If new, add to LogicMonitor \u2192 Apply resource/device properties and datasources \u2192 Begin monitoring \n\n**NetScan methods:** \n- **nmap:** Network mapper scan (comprehensive, detects OS, ports, services) \n- **ICMP Ping:** Simple ping sweep (fastest, basic reachability) \n- **SNMP Walk:** Query SNMP-enabled resource/device (network gear, servers with SNMP) \n- **Script:** Custom discovery logic (cloud APIs, CMDBs, etc.) \n- **AWS/Azure/GCP:** Cloud auto-discovery via APIs \n\n**Common use cases:** \n- **Data center discovery:** Scan 10.0.0.0/16 network, auto-add all servers \n- **Cloud auto-discovery:** Scan AWS account, add all EC2 instances daily \n- **Branch office monitoring:** Scan remote office subnets, discover network resource/device \n- **Dynamic infrastructure:** Auto-discover containers, VMs as they spin up \n\n**Example NetScan configurations:** \n- \"Production Servers\" - Scan 192.168.1.0/24 every 6 hours via nmap \n- \"AWS EC2 Discovery\" - Query AWS API every hour for new instances \n- \"Network resources/Devices\" - SNMP walk 10.0.0.0/8 daily for routers/switches \n\n**Workflow:** Use this tool to review netscans, then \"get\\_netscan\" for detailed configuration including filters and resource/device properties. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_netscan\" (configuration details), \"create\\_netscan\" (set up auto-discovery), \"run\\_netscan\" (trigger manual scan).",
+    "annotations": {
+      "title": "List NetScans",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_opsnotes",
+    "description": "List all operational notes (OpsNotes) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of OpsNotes with: id, note text, timestamp (epoch), who created it, tags, scope (applies to which resources/devices/groups), related SDTs. \n\n**What are OpsNotes:** Timestamped operational annotations displayed on graphs and dashboards. Document changes, deployments, maintenance, incidents - anything that might affect metrics. Appear as vertical lines on metric graphs at the time they occurred. \n\n**When to use:**\n- Correlate metric changes with operational events\n- Document deployments/changes\n- Create timeline of incidents and responses\n- Track maintenance activities\n- Generate operational reports\n\n\n**Use cases and examples:** \n\n**Deployments:** \n- \"Deployed v2.5.0 to production\" (explains CPU spike at deploy time) \n- \"Database schema migration\" (explains slow queries during migration) \n\n**Incidents:** \n- \"Customer reported slow load times - investigating\" \n- \"Found memory leak, restarting services\" \n- \"Incident resolved - bad cache configuration\" \n\n**Maintenance:** \n- \"Scaled from 10 to 15 instances\" \n- \"Updated SSL certificates\" \n- \"Cleared old logs, freed 500GB disk\" \n\n**Benefits:** \n- **Troubleshooting:** \"Latency increased at 2pm\" \u2192 Check OpsNotes: \"Deploy happened at 2pm\" \n- **Correlation:** Understand cause of metric anomalies \n- **Documentation:** Automatic operational timeline \n- **Communication:** Share what happened with team \n\n**Common filter patterns:** \n- By time: filter:\"happenedOn>1730851200\" (recent notes) \n- By tags: filter:\"tags~*deployment*\" \n- By device: filter:\"monitorObjectName~*prod-web*\" \n\n**Displayed on:** Graphs, dashboards, resource/device pages - visible wherever metrics are shown. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_opsnote\" (details), \"create\\_opsnote\" (add new), \"create\\_device\\_sdt\" (maintenance windows).",
+    "annotations": {
+      "title": "List OpsNotes",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_recipient_groups",
+    "description": "List all recipient groups in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of recipient groups with: id, name, description, member count, recipients list. \n\n**What are recipient groups:** Collections of recipients treated as a single notification target. Simplify escalation chains by notifying entire teams at once. Example: \"Database Team\" group contains 5 team members - notify group = notify all 5. \n\n**When to use:**\n- Find group IDs for escalation chains\n- Audit team notification lists\n- Review group membership before changes\n- Simplify notification management\n\n\n**Benefits over individual recipients:** \n- **Easier management:** Update team once, applies to all escalation chains using that group \n- **Team notifications:** Notify entire team simultaneously \n- **Organized:** Group by function (DB team, Network team, On-call rotation) \n\n**Common recipient groups:** \n- \"On-Call Engineers\" - Current on-call rotation members \n- \"Database Team\" - All database administrators \n- \"Network Operations\" - NOC team members \n- \"Management\" - For escalation to leadership \n\n**Use cases:** \n- \"Notify entire team for critical alerts\" \u2192 Use group instead of 5 individual recipients \n- \"Rotate on-call\" \u2192 Update group members without touching escalation chains \n- \"Add new team member\" \u2192 Add to group, automatically included in alerts \n\n**Workflow:** Use this tool to find groups, then use in escalation chains to notify multiple people at once. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_recipient\\_group\" (details), \"list\\_recipients\" (individual members), \"list\\_escalation\\_chains\" (see usage).",
+    "annotations": {
+      "title": "List recipient groups",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_recipients",
+    "description": "List all alert recipients (individual notification targets) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of recipients with: id, type (email/SMS/webhook), contact information, method (email address, phone number, webhook URL), name, status. \n\n**What are recipients:** Individual notification endpoints used in escalation chains. Can be: email addresses, SMS/phone numbers, webhook URLs, or integration endpoints (Slack, PagerDuty, etc.). \n\n**When to use:**\n- Find recipient IDs for escalation chain configuration\n- Audit who can receive alerts\n- Verify contact information is current\n- Review notification endpoints before updating escalation chains\n\n\n**Recipient types explained:** \n- **Email:** Email address (e.g., oncall@company.com, john.doe@company.com) \n- **SMS:** Mobile phone number (e.g., +1-555-123-4567) \n- **Voice:** Phone number for voice calls \n- **Arbitrary:** Custom webhooks for external integrations \n\n**Common use cases:** \n- \"Who can receive critical production alerts?\" \u2192 List recipients used in escalation chains \n- \"Update on-call phone number\" \u2192 Find recipient by name, update contact info \n- \"Add new team member to alerts\" \u2192 Create recipient, add to escalation chain \n- \"Remove former employee\" \u2192 Find and delete recipient \n\n**Recipients vs Recipient Groups:** \n- Recipients: Individual targets (one email, one phone) \n- Recipient Groups: Collections of recipients (notify entire team at once) \n\n**Workflow:** Use this tool to find available recipients, then use in \"create\\_escalation\\_chain\" or \"update\\_escalation\\_chain\" to set up notifications. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_recipient\" (details), \"list\\_recipient\\_groups\" (group management), \"list\\_escalation\\_chains\" (see who gets notified).",
+    "annotations": {
+      "title": "List alert recipients",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_report_groups",
+    "description": "List all report groups (folders) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of report groups with: id, name, parentId, full path, description, number of reports, number of subgroups. \n\n**What are report groups:** Organizational folders for reports, like directories for files. Used to categorize reports by audience, frequency, purpose, or department. \n\n**When to use:**\n- Browse report organization before creating reports\n- Find group IDs for report operations\n- Understand report hierarchy\n- Navigate to specific report folders\n\n\n**Common organization patterns:** \n- By audience: \"Executive Reports\", \"Operations Reports\", \"Customer Reports\" \n- By frequency: \"Daily Reports\", \"Weekly Reports\", \"Monthly Reports\" \n- By department: \"IT Reports\", \"Finance Reports\", \"Compliance Reports\" \n- By type: \"SLA Reports\", \"Capacity Reports\", \"Alert Summary Reports\" \n\n**Use cases:** \n- Organize reports for different stakeholders \n- Group compliance/audit reports separately \n- Separate internal vs customer-facing reports \n- Structure reports by delivery schedule \n\n**Workflow:** Use this tool to browse hierarchy, then \"list\\_reports\" filtered by groupId to see reports in specific folder. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_report\\_group\" (details), \"list\\_reports\" (reports in group), \"create\\_report\\_group\" (create folder).",
+    "annotations": {
+      "title": "List report groups",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_reports",
+    "description": "List all reports (scheduled and on-demand) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of reports with: id, name, type (alert/availability/capacity/performance), description, schedule, recipients, format (PDF/HTML/CSV), last run time. \n\n**What are reports:** Scheduled or on-demand documents summarizing monitoring data. Generate PDFs, HTML, or CSV files with metrics, alerts, availability statistics, capacity planning data. Automatically email to stakeholders. \n\n**When to use:** \n- Find existing reports before creating duplicates\n- Review report schedules\n- Check who receives reports\n- Audit reporting configuration\n\n**Report types:** \n- **Alert Reports:** Summary of alerts over time period (count by severity, MTTR, top alerting resources/devices)\n- **Availability Reports:** Uptime statistics, SLA compliance, outage summaries\n- **Capacity Planning:** Disk growth trends, CPU/memory usage over time, forecasting\n- **Performance Reports:** Metric trends, top consumers, performance baselines\n- **Custom Reports:** User-defined queries and visualizations\n\n**Common use cases:** \n- **Executive summaries:** Monthly availability report to leadership\n- **SLA reporting:** Prove 99.9% uptime to customers\n- **Capacity planning:** Forecast when to add storage/servers\n- **Compliance:** Document monitoring coverage and alert response\n- **Billing:** Usage reports for chargebacks\n\n**Report schedules:** \n- Daily: 8am delivery for NOC shift handoff\n- Weekly: Monday morning management briefing\n- Monthly: End-of-month SLA reports\n- Quarterly: Capacity planning reviews\n- On-demand: Generate for specific incidents/audits\n\n**Workflow:** Use this tool to find reports, then \"get\\_report\" for details, or \"generate\\_report\" to run on-demand. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_report\" (details), \"list\\_report\\_groups\" (organization), \"generate\\_report\" (run now).",
+    "annotations": {
+      "title": "List reports",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_resource_datasources",
+    "description": "List datasources applied to a specific resource/device in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of datasources actively monitoring this resource/device with: id (deviceDataSourceId), dataSourceName, dataSourceDisplayName, status, alert status, instance count, last poll time. \n\n**When to use:**\n- See what's being monitored on a resource/device\n- Verify datasource is collecting data\n- Get deviceDataSourceId for metric retrieval\n- Troubleshoot missing data\n- Check datasource health\n\n\n**What you discover:** \n- Which datasources are active (e.g., WinCPU, WinMemory, SNMP_Network_Interfaces) \n- How many instances per datasource (e.g., 3 disks, 4 network interfaces) \n- Collection status: Collecting data vs errors \n- Alert status: Any active alerts from this datasource \n\n**This is step 1 for getting metrics:** **Complete workflow to retrieve metric data:** 1. Use this tool \u2192 get deviceDataSourceId for datasource you want (e.g., WinCPU) 2. Use \"list\\_device\\_instances\" \u2192 get instanceId for specific instance 3. Use \"get\\_device\\_instance\\_data\" \u2192 get actual metric values \n\n**Troubleshooting use cases:** \n- \"Why no CPU data?\" \u2192 Check if WinCPU datasource is applied and collecting \n- \"Find disk datasource\" \u2192 Look for datasource with \"disk\" or \"volume\" in name \n- \"Check datasource errors\" \u2192 Review status field for error messages \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"list\\_device\\_instances\" (next step), \"get\\_device\\_instance\\_data\" (get metrics), \"update\\_device\\_datasource\" (enable/disable).",
+    "annotations": {
+      "title": "List resource/device datasources",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "number",
+          "description": "The resource/device ID"
+        },
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "deviceId"
+      ]
+    }
+  },
+  {
+    "name": "list_resource_group_properties",
+    "description": "List all custom properties for a specific resource/device group in LogicMonitor (LM) monitoring. Properties set at group level are inherited by all resource/device in the group. \n\n**Returns:** Array of properties with: name, value, type (custom vs system), and inheritance source. \n\n**When to use:**\n- Review properties before bulk updates\n- Audit credentials/settings applied to resource/device group\n- Verify property inheritance from parent groups\n- Check which properties resource/device will inherit when added to group\n- Document group configuration\n\n\n**What are group properties:** Key-value pairs set at group level that ALL resource/device in the group inherit. Common uses: credentials (SSH/SNMP), environment tags, owner/team info, monitoring settings. \n\n**Property inheritance:** \n- Properties set on group apply to ALL resource/device in group \n- Child groups inherit from parent groups \n- Device-level properties override group properties \n- Used by datasource \"appliesTo\" logic and authentication \n\n**Common group properties:** \n- **Credentials:** ssh.user, ssh.pass, snmp.community, wmi.user, wmi.pass \n- **Tags:** env (production/staging), location (datacenter), owner (team name) \n- **Business metadata:** cost.center, sla.tier, compliance.level \n- **Monitoring config:** polling.interval, alert.threshold.multiplier \n\n**Use cases:** \n- Audit credentials: Check which credentials are configured for group \n- Before bulk update: See current values before changing \n- Troubleshoot authentication: Verify credentials applied to resource/device \n- Document configuration: Export group settings \n\n**Workflow:** Use \"list\\_resource\\_groups\" to find groupId, then use this tool to see properties, then \"update\\_device\\_group\\_property\" to modify. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"update\\_device\\_group\\_property\" (modify property), \"get\\_resource\\_group\" (group details), \"list\\_device\\_properties\" (device-level properties).",
+    "annotations": {
+      "title": "List resource/device group properties",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "groupId": {
+          "type": "number",
+          "description": "The resource/device group ID"
+        },
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "groupId"
+      ]
+    }
+  },
+  {
+    "name": "list_resource_groups",
+    "description": "List all resource/device groups (folders) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of groups with: id, name, parentId, full path, description, number of resources/devices, number of subgroups, custom properties. \n\n**What are groups:** Organizational folders for resources/devices, like directories in a file system. Used to organize by location, environment, customer, or any logical structure. \n\n**When to use:** \n- Browse resource/device organization\n- Find group IDs for resource/device creation/assignment\n- Understand resource/device hierarchy\n- Get group IDs for group-level operations (properties, SDT)\n\n**Common use cases:** \n- Geographic: \"US-West\", \"EU-Central\", \"APAC\"\n- Environment: \"Production\", \"Staging\", \"Development\"\n- Customer: \"Customer-A\", \"Customer-B\" (for MSPs)\n- Function: \"Web Servers\", \"Database Servers\", \"Network resources/Devices\"\n\n**Common filter patterns:** \n- By name: filter:\"name\\~\\*Production\\*\"\n- Root groups: filter:\"parentId:1\"\n- Non-empty: filter:\"numOfDirectDevices>0\"\n\n**Groups inherit properties:** Custom properties set on group are inherited by all resource/device in that group (useful for credentials, location tags). \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_resource\\_group\" (details), \"create\\_resource\\_group\" (create new), \"list\\_resource\\_group\\_properties\" (group properties).",
+    "annotations": {
+      "title": "List resource/device groups",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_resource_instances",
+    "description": "List instances of a datasource on a specific resource/device in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of instances with: id, name, displayName, description, status, alert status, last collection time. \n\n**What are instances:** Individual components monitored by a datasource. Examples: individual disks (C:, D:, E:), network interfaces (eth0, eth1), database tables, processes. \n\n**When to use:** \n- List all disks on a server before getting disk metrics\n- Find specific network interface for bandwidth data\n- Discover what instances are being monitored\n- Get instance IDs for metric retrieval\n\n**Example workflow:** Device \"web-server-01\" has datasource \"WinVolumeUsage-\" \u2192 instances: C:, D:, E: (each disk is an instance) Device \"router-01\" has datasource \"SNMP\\_Network\\_Interfaces\" \u2192 instances: GigabitEthernet0/1, GigabitEthernet0/2 (each interface is an instance) \n\n**Complete workflow to get metrics:** \n- Use \"list\\_resource\\_datasources\" to get deviceDataSourceId\n- Use this tool to list instances and get instanceId\n- Use \"get\\_resource\\_instance\\_data\" with instanceId to get actual metrics\n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"list\\_resource\\_datasources\" (first step), \"get\\_resource\\_instance\\_data\" (get metrics).",
+    "annotations": {
+      "title": "List datasource instances",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "number",
+          "description": "The resource/device ID"
+        },
+        "deviceDataSourceId": {
+          "type": "number",
+          "description": "The resource/device datasource ID"
+        },
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "deviceId",
+        "deviceDataSourceId"
+      ]
+    }
+  },
+  {
+    "name": "list_resource_properties",
+    "description": "List all custom properties (system and user-defined) for a specific resource/device in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of properties with: name, value, source (device-level vs inherited from group), type (system vs custom). \n\n**When to use:** \n- Review resource/device configuration\n- Check credentials/authentication settings\n- See inherited vs device-specific properties\n- Troubleshoot datasource applies logic\n- Audit resource/device metadata\n\n**Property types:** \n\n**System properties (auto-populated by LogicMonitor):** \n- system.hostname: Device hostname\n- system.devicetype: Device category (server, network, cloud)\n- system.ips: IP addresses\n- system.categories: Auto-detected technologies (e.g., \"AWS/EC2\")\n\n**Custom properties (user-defined):** \n- Credentials: ssh.user, snmp.community, wmi.user\n- Tags: env (prod/staging), owner (team name), location\n- Integration IDs: servicenow.ci_id, jira.project\n- Business metadata: cost.center, sla.tier, backup.policy\n\n**Property inheritance:** Properties can be set at: Device level (highest priority) \u2192 Group level \u2192 Parent group (inherited). \n\n**Datasource appliesTo logic uses properties:** Many datasources check properties to decide if they should monitor device. Example: AWS\\_EC2 datasource checks if resource/device has \"aws.resourcetype=ec2\" property. \n\n**Workflow:** Use \"list\\_resources\" to find deviceId, then use this tool to see all properties including inherited ones. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"update\\_device\\_property\" (modify), \"get\\_resource\" (see summary), \"list\\_datasources\" (see how properties affect monitoring).",
+    "annotations": {
+      "title": "List resource/device properties",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "number",
+          "description": "The resource/device ID"
+        },
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "deviceId"
+      ]
+    }
+  },
+  {
+    "name": "list_resources",
+    "description": "List all monitored resources/devices in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of resource/device with: id, displayName, name (IP/hostname), hostStatus (dead/alive/unknown), preferredCollectorId, deviceType, custom properties, group memberships. \n\n**When to use:** \n- Get inventory of all monitored resources/devices\n- Find specific resource/device by name/IP/property\n- Check resource/device health status\n- Get resource/device IDs for other operations\n\n**Two search modes:** \n- **Simple search:** Use query parameter with free text (e.g., query:\"production\", query:\"web-server\") - automatically searches displayName, description, and name fields\n- **Advanced filtering:** Use filter parameter with LM filter syntax (e.g., filter:\"hostStatus:alive,displayName~\\*web\\*\") for precise control\n\n**Common filter patterns:** \n- By name: filter:\"displayName\\~\\*prod\\*\" (wildcard search) \n- By status: filter:\"hostStatus:alive\" or filter:\"hostStatus:dead\" \n- By type: filter:\"systemProperties.name:system.devicetype,value:server\" \n- By custom property: filter:\"customProperties.name:company.team,customProperties.value:teamA\" \n- By collector: filter:\"preferredCollectorId:123\" \n- Multiple conditions: filter:\"hostStatus:alive,displayName\\~\\*web\\*\" (comma = AND) \n\n**Query vs Filter:** \n- query: Simplified search across displayName, description, name (OR logic). Use for quick lookups: query:\"prod-web-01\"\n- filter: Precise LM filter syntax with any field. Use for complex conditions: filter:\"hostStatus:alive,displayName~\\*prod\\*\"\n- If both provided, query is converted to filter and combined with provided filter using AND logic\n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Performance tips:** Use autoPaginate:false for large environments (>1000 resources/devices) and paginate manually to avoid timeouts. \n\n**Related tools:** \"get\\_resource\" (details), \"generate\\_resource\\_link\" (get UI link).",
+    "annotations": {
+      "title": "List monitored resources/devices",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Simple search query. Free text (e.g., \"production\", \"web-server\", \"192.168.1.100\") automatically searches across displayName, description, and name fields. Can also use filter syntax (e.g., \"hostStatus:alive\") which gets formatted automatically."
+        },
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_roles",
+    "description": "List all roles (permission sets) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of roles with: id, name, description, custom flag, associated users count, permissions (view/manage/delete for resources/alerts/reports/settings). \n\n**What are roles:** Permission templates assigned to users. Control who can view/modify/delete resources, alerts, dashboards, settings. Essential for RBAC (role-based access control). \n\n**When to use:** \n- Discover available roles before creating users\n- Audit permission structure\n- Find role IDs for user assignment\n- Compare custom vs built-in roles\n- Compliance documentation\n\n**Built-in roles (examples):** \n- administrator: Full access to everything\n- readonly: View-only access to monitoring data\n- manager: Manage resources/devices/alerts but not settings\n\n**Custom roles:** Organizations create custom roles for specific needs (e.g., \"database-team-role\", \"view-prod-only\"). \n\n**Common use cases:** \n- \"What roles exist?\" \u2192 List all to see options\n- \"Who can delete resources/devices?\" \u2192 Check which roles have delete permissions\n- \"Create read-only user\" \u2192 Find \"readonly\" role ID for user creation\n\n**Workflow:** Use this tool to discover roles, then \"get\\_role\" for detailed permissions, then use in \"create\\_user\" or \"update\\_user\". \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_role\" (detailed permissions), \"list\\_users\" (see user assignments), \"create\\_user\" (assign roles to new users).",
+    "annotations": {
+      "title": "List roles",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_sdts",
+    "description": "List all Scheduled Down Times (SDTs) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of SDTs with: id, type (DeviceSDT/DeviceGroupSDT/etc), device/group name, start/end times, duration, comment, creator, status (active/scheduled/expired). \n\n**What are SDTs:** Maintenance windows that suppress alerting to prevent false alarms during planned work. No alerts are generated during SDT periods. \n\n**When to use:** \n- View active maintenance windows\n- Check upcoming scheduled maintenance\n- Verify SDT was created correctly\n- Find SDTs to extend or cancel\n- Audit who scheduled downtime\n\n**Common filter patterns:** \n- Active now: filter:\"isEffective:true\"\n- Future SDTs: filter:\"startDateTime>{epoch}\"\n- By device: filter:\"deviceDisplayName\\~\\*prod-web\\*\"\n- One-time vs recurring: filter:\"type:oneTime\" or filter:\"type:monthly\"\n- By creator: filter:\"admin:john.doe\"\n\n**SDT types explained:** \n- DeviceSDT: All monitoring on specific resource/device\n- DeviceGroupSDT: All resource/device in group\n- DeviceDataSourceSDT: Specific datasource on resource/device\n- DeviceDataSourceInstanceSDT: Specific instance only (e.g., C: drive)\n\n**Best practice:** Always add meaningful comment explaining maintenance reason for audit trail. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"create\\_resource\\_sdt\" (schedule maintenance), \"delete\\_sdt\" (cancel maintenance), \"get\\_sdt\" (details).",
+    "annotations": {
+      "title": "Get Scheduled Down Times",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_service_groups",
+    "description": "List all service groups (folders) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of service groups with: id, name, parentId, full path, description, number of services, number of subgroups. \n\n**What are service groups:** Organizational folders for business services, similar to resource/device groups for resources/devices. Used to categorize services by business unit, region, customer, or application stack. \n\n**When to use:**\n- Browse service organization before creating services\n- Find group IDs for service operations\n- Understand service hierarchy\n- Navigate to specific service folders\n\n\n**Common organization patterns:** \n- By business unit: \"E-Commerce\", \"Marketing Platform\", \"Internal IT\" \n- By customer: \"Customer A Services\", \"Customer B Services\" (MSP environments) \n- By region: \"APAC Services\", \"EMEA Services\", \"Americas Services\" \n- By tier: \"Tier 1 Critical\", \"Tier 2 Standard\", \"Tier 3 Best Effort\" \n\n**Use cases:** \n- Organize services for different stakeholders \n- Group services by SLA tiers \n- Separate internal vs customer-facing services \n- Structure multi-tenant service monitoring \n\n**Workflow:** Use this tool to browse hierarchy, then \"list\\_services\" filtered by groupId to see services in specific folder. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_service\\_group\" (details), \"list\\_services\" (services in group), \"create\\_service\\_group\" (create folder).",
+    "annotations": {
+      "title": "List service groups",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_services",
+    "description": "List all business services in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of services with: id, name, description, health status, dependencies, monitored resources, service level objectives (SLOs), availability percentage. \n\n**What are services:** Business-level monitoring constructs that aggregate multiple resources/devices/resources into a single health status. Represent customer-facing services, applications, or business processes. Example: \"E-Commerce Platform\" service includes web servers, databases, load balancers, and APIs - one health indicator for entire platform. \n\n**When to use:**\n- Monitor business service health vs individual resource/device health\n- Track SLA compliance for customer-facing services\n- Understand service dependencies\n- Create business-level dashboards\n- Report on application availability\n\n\n**Service health calculation:** Service health = Aggregate of all dependent resources. If critical resource fails, service status = down. Allows stakeholders to see \"Is the application working?\" instead of \"Is server X working?\" \n\n**Use cases and examples:** \n\n**Customer-facing services:** \n- \"E-Commerce Website\" - Web servers + database + payment gateway + CDN \n- \"Mobile App Backend\" - API servers + auth service + push notifications \n- \"SaaS Platform\" - All infrastructure for multi-tenant application \n\n**Internal services:** \n- \"Employee VPN\" - VPN servers + RADIUS auth + firewall \n- \"Corporate Email\" - Mail servers + spam filter + archiving \n- \"CI/CD Pipeline\" - Jenkins + artifact storage + deployment agents \n\n**Benefits:** \n- **Business perspective:** Non-technical stakeholders understand \"Shopping Cart is 99.5% available\" \n- **SLA tracking:** Measure uptime for customer SLAs \n- **Root cause:** When service is down, see which specific resource failed \n- **Dependencies:** Visualize what resources comprise a service \n\n**Common filter patterns:** \n- By status: filter:\"status:normal\" or filter:\"status:dead\" \n- By name: filter:\"name~*production*\" \n\n**Workflow:** Use this tool to find services, then \"get\\_service\" for detailed dependency tree and health status. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_service\" (details and dependencies), \"list\\_service\\_groups\" (organization), \"create\\_service\" (define new business service).",
+    "annotations": {
+      "title": "List services",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_users",
+    "description": "List all users in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of users with: id, username, email, roles, status (active/suspended), last login time, created date, API token count. \n\n**When to use:** \n- Audit user access\n- Find user IDs for API token management\n- Check who has admin access\n- Identify inactive users\n- Compliance reporting\n\n**Common filter patterns:** \n- Active users: filter:\"status:active\"\n- By email: filter:\"email\\~\\*@company.com\"\n- By role: filter:\"roles:\\*administrator\\*\"\n- Recent logins: filter:\"lastLoginOn>{epoch}\"\n- Never logged in: filter:\"lastLoginOn:0\"\n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_user\" (details), \"list\\_roles\" (available roles), \"list\\_api\\_tokens\" (user's API tokens).",
+    "annotations": {
+      "title": "List users",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_website_checkpoints",
+    "description": "List available checkpoint locations for website monitoring in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of checkpoint locations with: id, name, geographic region, status, type (internal/external). \n\n**What are checkpoints:** Global testing locations from which LogicMonitor runs synthetic website checks. Think \"test my website from New York, London, Tokyo\" - checkpoints are those global vantage points. \n\n**When to use:**\n- Check available checkpoint locations before creating website monitors\n- Verify geographic coverage for multi-region testing\n- Select appropriate locations for SLA monitoring\n- Plan website monitoring strategy\n\n\n**Checkpoint types:** \n- **External (Cloud):** LogicMonitor-managed locations around the world (US-East, EU-West, Asia-Pacific, etc.) \n- **Internal (Collector-based):** Tests run from your own collectors (test internal apps, VPNs, private networks) \n\n**Common checkpoint locations:** \n- North America: US-East, US-West, US-Central, Canada \n- Europe: EU-West (Ireland), EU-Central (Frankfurt), UK \n- Asia-Pacific: Singapore, Sydney, Tokyo \n- South America: S\u00e3o Paulo \n\n**Use cases:** \n- **Global SLA monitoring:** Test from regions where customers are located \n- **CDN verification:** Ensure content delivery works worldwide \n- **Regional compliance:** Monitor from specific geographic locations \n- **Multi-region performance:** Compare response times across locations \n- **Failover testing:** Verify DR sites accessible from all regions \n\n**Best practices:** \n- Select checkpoints near your user base \n- Use multiple checkpoints for critical services (avoid false positives from single location issues) \n- Mix internal and external checkpoints for comprehensive coverage \n- Consider timezone differences for result interpretation \n\n**Workflow:** Use this tool to discover available locations, then use those checkpoint IDs when creating website monitors via \"create\\_website\". \n\n**Related tools:** \"list\\_websites\" (existing monitors), \"create\\_website\" (configure checkpoints), \"get\\_website\" (verify checkpoint configuration).",
+    "annotations": {
+      "title": "List checkpoint locations",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_website_groups",
+    "description": "List all website groups (folders) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of website groups with: id, name, parentId, full path, description, number of websites, number of subgroups. \n\n**What are website groups:** Organizational folders for website monitors (synthetic checks), similar to resource/device groups. Used to categorize monitored URLs/services by application, environment, or customer. \n\n**When to use:** \n- Browse website organization before creating monitors\n- Find group IDs for website operations\n- Understand monitoring hierarchy\n- Navigate to specific website folders\n\n**Common organization patterns:** \n- By application: \"E-Commerce Site\", \"API Endpoints\", \"Marketing Pages\"\n- By environment: \"Production URLs\", \"Staging URLs\", \"DR Sites\"\n- By location: \"US Sites\", \"EU Sites\", \"APAC Sites\"\n- By customer: \"Customer A Sites\", \"Customer B Sites\" (MSP)\n- By type: \"Public Websites\", \"Internal Apps\", \"Third-Party APIs\"\n\n**Use cases:** \n- Organize monitors by application or service\n- Group customer-facing vs internal endpoints\n- Separate production vs non-production monitoring\n- Structure multi-region website monitoring\n\n**Workflow:** Use this tool to browse hierarchy, then \"list\\_websites\" filtered by groupId to see monitors in specific folder. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_website\\_group\" (details), \"list\\_websites\" (websites in group), \"create\\_website\\_group\" (create folder).",
+    "annotations": {
+      "title": "List website groups",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_websites",
+    "description": "List all website monitors (synthetic checks) in LogicMonitor (LM) monitoring. \n\n**Returns:** Array of website monitors with: id, name, type (webcheck/pingcheck), domain/URL, status, checkpoint locations, response time, availability percentage. \n\n**What are website monitors:** Synthetic checks that test URL/service availability from multiple global locations. Like \"ping from the internet\" to verify your services are accessible. \n\n**When to use:** \n- List all monitored URLs/services\n- Check website availability status\n- Find website IDs for other operations\n- Audit monitored endpoints\n\n**Monitor types:** \n- webcheck: Full HTTP/HTTPS check (status code, response time, content validation, SSL cert)\n- pingcheck: Simple ICMP ping test (faster, simpler)\n\n**Common filter patterns:** \n- By domain: filter:\"domain\\~\\*example.com\\*\"\n- By type: filter:\"type:webcheck\" or filter:\"type:pingcheck\"\n- By status: filter:\"overallAlertStatus:critical\" (find down sites)\n- By name: filter:\"name\\~\\*production\\*\"\n\n**Use cases:** Monitor public websites, API endpoints, login pages, load balancer health checks, SaaS service availability. \n\n**Important:** A negative \"total\" value in the response indicates incomplete results. Use pagination (size/offset parameters) or set autoPaginate: true to retrieve all items. \n\n**Related tools:** \"get\\_website\" (details), \"create\\_website\" (add new), \"generate\\_website\\_link\" (get URL).",
+    "annotations": {
+      "title": "List website monitors",
+      "readOnlyHint": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number",
+          "description": "Number of results per page (default: 50, max: 1000)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Starting offset for pagination (default: 0). Use this to skip a specific number of results."
+        },
+        "autoPaginate": {
+          "type": "boolean",
+          "description": "Automatically fetch all pages (default: false). When true, fetches all results across multiple pages. When false, returns only the requested page. Use false for large result sets to avoid long response times."
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression using LogicMonitor query syntax. Examples: name:*prod*, displayName~*server*, id>100, hostStatus:normal. Available operators: : (equals), ~ (includes), !: (not equals), !~ (not includes), >: (greater than or equals), <: (less than or equals), > (greater than), < (less than). Multiple conditions: Use comma (,) for AND, use || for OR. Do NOT use &&."
+        },
+        "fields": {
+          "type": "string",
+          "description": "Comma-separated list of fields to include in response. Examples: \"id,displayName,hostStatus\" or use \"*\" for all fields. Omit this parameter to receive a curated set of commonly used fields."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+]

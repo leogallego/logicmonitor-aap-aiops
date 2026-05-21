@@ -1,0 +1,22 @@
+namespace: leogallego
+name: logicmonitor_mcp
+version: 1.0.0
+readme: README.md
+authors:
+- your name <example@domain.com>
+description: Ansible collection generated from MCP server tools. Provides typed module
+  wrappers with argument validation that delegate to ansible.mcp.run_tool at runtime.
+license_file: LICENSE
+tags:
+- mcp
+- tools
+- ai
+dependencies:
+  ansible.mcp: '*'
+repository: http://example.com/repository
+documentation: http://docs.example.com
+homepage: http://example.com
+issues: http://example.com/issue/tracker
+build_ignore:
+- .gitignore
+- changelogs/.plugin-cache.yaml

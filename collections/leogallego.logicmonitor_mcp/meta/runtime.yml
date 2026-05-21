@@ -1,0 +1,143 @@
+requires_ansible: '>=2.15.0'
+plugin_routing:
+  action:
+    generate_alert_link:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    generate_dashboard_link:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    generate_resource_link:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    generate_website_link:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_access_group:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_alert:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_alert_rule:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_audit_log:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_collector:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_collector_group:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_configsource:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_dashboard:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_dashboard_group:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_datasource:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_escalation_chain:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_eventsource:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_integration:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_netscan:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_opsnote:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_recipient:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_recipient_group:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_report:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_report_group:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_resource:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_resource_datasource:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_resource_group:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_resource_instance_data:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_role:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_sdt:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_service:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_service_group:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_topology:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_user:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_website:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    get_website_group:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_access_groups:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_alert_rules:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_alerts:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_api_tokens:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_audit_logs:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_collector_groups:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_collector_versions:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_collectors:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_configsources:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_dashboard_groups:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_dashboards:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_datasources:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_escalation_chains:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_eventsources:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_integrations:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_netscans:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_opsnotes:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_recipient_groups:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_recipients:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_report_groups:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_reports:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_resource_datasources:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_resource_group_properties:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_resource_groups:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_resource_instances:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_resource_properties:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_resources:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_roles:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_sdts:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_service_groups:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_services:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_users:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_website_checkpoints:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_website_groups:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
+    list_websites:
+      redirect: leogallego.logicmonitor_mcp._mcp_proxy
