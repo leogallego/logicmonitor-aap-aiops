@@ -1,0 +1,43 @@
+---
+- name: Simulate unknown alert to trigger Run-stage escalation
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    eda_webhook_url: "{{ eda_url | default('http://localhost:5000/logicmonitor') }}"
+
+  tasks:
+    - name: Send unmatched alert to EDA webhook
+      ansible.builtin.uri:
+        url: "{{ eda_webhook_url }}"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          type: "network_anomaly_unknown"
+          severity: "critical"
+          host: "router1"
+          id: "SIM-RUN-001"
+          message: >-
+            Unusual network degradation pattern detected across
+            multiple interfaces. No matching remediation rule exists.
+          details:
+            affected_interfaces:
+              - Ethernet1
+              - Ethernet2
+            anomaly_score: 0.92
+            first_seen: "{{ ansible_date_time.iso8601 | default(now()) }}"
+        status_code:
+          - 200
+          - 202
+      register: __webhook_result
+
+    - name: Confirm alert sent to EDA
+      ansible.builtin.debug:
+        msg: >-
+          Unknown alert sent to EDA webhook.
+          Response: {{ __webhook_result.status }}.
+          This should trigger the catch-all rule and escalate to Edwin AI.
+        verbosity: 0
