@@ -1,0 +1,36 @@
+---
+- name: Report remediation result to LogicMonitor
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    # These vars are passed from the calling workflow/job template
+    # lm_company: "yourcompany"
+    # lm_bearer_token: "{{ lookup('env', 'LM_BEARER_TOKEN') }}"
+    # alert_id: ""
+    # remediation_result: ""
+    # remediation_host: ""
+
+  tasks:
+    - name: Acknowledge alert in LogicMonitor
+      ansible.builtin.uri:
+        url: "https://{{ lm_company }}.logicmonitor.com/santaba/rest/alert/alerts/{{ alert_id }}/ack"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ lm_bearer_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          ackComment: >-
+            Automated remediation by AAP: {{ remediation_result }}
+            on host {{ remediation_host }}.
+        status_code:
+          - 200
+          - 202
+      register: __ack_result
+
+    - name: Display acknowledgment result
+      ansible.builtin.debug:
+        var: __ack_result.status
+        verbosity: 1
