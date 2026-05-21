@@ -714,9 +714,8 @@ Hands-on demonstrations and video walkthroughs for this solution guide are plann
 
 | Resource | Status | Description |
 |----------|--------|-------------|
-| Hands-on workshop | Planned | Self-paced lab covering all three stages on a live AAP 2.6 environment |
 | Video walkthrough | Planned | Recorded demo showing the crawl-walk-run progression end-to-end |
-| RHDP demo | Available | Network automation workshop environment (base infrastructure) -- request via RHDP catalog |
+| Live demo environment | Planned | Pre-configured environment with AAP 2.6, ContainerLab, and all three stages ready to run |
 
 ---
 
