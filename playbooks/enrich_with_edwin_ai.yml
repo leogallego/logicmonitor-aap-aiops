@@ -1,0 +1,71 @@
+---
+- name: Enrich alert with Edwin AI context
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    # Passed from the workflow template via extra_vars
+    # affected_host: ""
+    # alert_id: ""
+    # alert_context: {}
+    # edwin_portal: ""
+    # edwin_access_id: ""
+    # edwin_access_key: ""
+    edwin_lookback_window: 3600
+
+  tasks:
+    - name: Query Edwin AI for correlated alerts
+      logicmonitor.edwin_ai.query_api:
+        portal: "{{ edwin_portal }}"
+        access_id: "{{ edwin_access_id }}"
+        access_key: "{{ edwin_access_key }}"
+        record_type: alerts
+        limit: 20
+        lookback_window: "{{ edwin_lookback_window }}"
+      register: __edwin_alerts
+
+    - name: Query Edwin AI for insights
+      logicmonitor.edwin_ai.query_api:
+        portal: "{{ edwin_portal }}"
+        access_id: "{{ edwin_access_id }}"
+        access_key: "{{ edwin_access_key }}"
+        record_type: insights
+        limit: 10
+        lookback_window: "{{ edwin_lookback_window }}"
+      register: __edwin_insights
+
+    - name: Analyze correlated alerts for root cause
+      ansible.builtin.set_fact:
+        __correlated_alerts: "{{ __edwin_alerts.data.results | default([]) }}"
+        __insights: "{{ __edwin_insights.data.results | default([]) }}"
+
+    - name: Determine root cause from correlated context
+      ansible.builtin.set_fact:
+        __root_cause: >-
+          {% set alert_types = __correlated_alerts | map(attribute='type', default='unknown') | list %}
+          {% if 'interface_error' in alert_types %}
+          interface_errors
+          {% elif 'cpu_high' in alert_types or 'resource_exhaustion' in alert_types %}
+          cpu_exhaustion
+          {% elif 'config_change' in alert_types %}
+          config_drift
+          {% else %}
+          unknown
+          {% endif %}
+
+    - name: Report enrichment results
+      ansible.builtin.debug:
+        msg: >-
+          Edwin AI enrichment complete.
+          Correlated alerts: {{ __correlated_alerts | length }}.
+          Root cause determination: {{ __root_cause | trim }}.
+        verbosity: 0
+
+    - name: Set workflow artifacts for downstream nodes
+      ansible.builtin.set_stats:
+        data:
+          root_cause: "{{ __root_cause | trim }}"
+          correlated_alert_count: "{{ __correlated_alerts | length }}"
+          affected_host: "{{ affected_host }}"
+          alert_id: "{{ alert_id }}"
