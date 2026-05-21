@@ -234,6 +234,17 @@ The "Reset BGP Session" job template (`playbooks/reset_bgp_session.yml`) targets
 
 Run `validation/test_crawl.sh` to send a simulated BGP peer down alert to the EDA webhook. Verify in the AAP Controller that the "Reset BGP Session" job launches targeting the correct host.
 
+### Components
+
+| Component | Details |
+|-----------|---------|
+| EDA source | `ansible.eda.webhook` on EDA Event Stream |
+| Rulebook | Single rule matching `bgp_peer_down` |
+| Job Template | "Reset BGP Session" |
+| Playbook | `playbooks/reset_bgp_session.yml` (uses `arista.eos.eos_command`) |
+| Simulation | `playbooks/simulate_bgp_down.yml` (shuts interface on cEOS) |
+| Collections | `arista.eos`, `logicmonitor.integration` |
+
 ---
 
 ## Stage 2 -- Walk: AI-Enriched Remediation
@@ -351,6 +362,18 @@ Run `validation/test_walk.sh` to send a simulated BGP flapping alert to the EDA 
 - `playbooks/simulate_interface_errors.yml` -- injects interface errors alongside BGP flapping
 - `playbooks/simulate_config_drift.yml` -- changes BGP neighbor config to cause flapping with a config change event in LM
 
+### Components
+
+| Component | Details |
+|-----------|---------|
+| EDA source | `ansible.eda.webhook` (same as Crawl) |
+| Rulebook | Adds `bgp_flapping` → workflow rule |
+| Workflow Template | "BGP Smart Remediation" (4-5 nodes) |
+| Enrichment playbook | `playbooks/enrich_with_edwin_ai.yml` (uses `logicmonitor.edwin_ai.query_api`) |
+| Remediation playbooks | `playbooks/bounce_interface.yml`, `playbooks/rollback_config.yml` |
+| Simulation playbooks | `playbooks/simulate_interface_errors.yml`, `playbooks/simulate_config_drift.yml` |
+| Collections | `arista.eos`, `logicmonitor.integration`, `logicmonitor.edwin_ai` |
+
 ---
 
 ## Stage 3 -- Run: Agentic AIOps with MCP
@@ -441,6 +464,19 @@ The community `logicmonitor-mcp-server` (125 tools wrapping LM's REST API) can c
 ### Validation
 
 Run `validation/test_run.sh` to send a simulated unknown alert type to the EDA webhook. Verify in the AAP Controller that the "Escalate to Edwin AI" job launches and sends the alert context to Edwin AI for MCP-based investigation.
+
+### Components
+
+| Component | Details |
+|-----------|---------|
+| EDA source | `ansible.eda.webhook` (same as Crawl/Walk) |
+| Rulebook | Adds catch-all escalation rule (lowest priority) |
+| Job Template | "Escalate to Edwin AI" |
+| Escalation playbook | `playbooks/escalate_to_edwin_ai.yml` — sends alert context to Edwin AI |
+| AAP MCP Server | `ansible/aap-mcp-server` deployed alongside AAP |
+| MCP Toolsets | `job_management`, `inventory_management` at minimum |
+| Optional | Community LM MCP Server for bidirectional LM exploration |
+| Collections | `logicmonitor.integration`, `logicmonitor.edwin_ai` |
 
 ---
 
