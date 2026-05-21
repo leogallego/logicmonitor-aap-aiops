@@ -1,0 +1,25 @@
+---
+# LogicMonitor AIOps - Network Remediation Rulebook
+# Tiered rules: Crawl (deterministic) → Walk (AI-enriched) → Run (agentic catch-all)
+#
+# LM webhook payload fields are placeholders until verified against live LM webhook.
+# Update event.payload.* field names to match actual LM alert JSON structure.
+
+- name: LogicMonitor AIOps - Network Remediation
+  hosts: all
+  sources:
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+  rules:
+    # --- CRAWL: Known alerts, deterministic remediation ---
+    - name: BGP peer down - reset session
+      condition: event.payload.type == "bgp_peer_down"
+      action:
+        run_job_template:
+          name: "Reset BGP Session"
+          organization: "Network Ops"
+          job_args:
+            extra_vars:
+              affected_host: "{{ event.payload.host }}"
+              alert_id: "{{ event.payload.id }}"
