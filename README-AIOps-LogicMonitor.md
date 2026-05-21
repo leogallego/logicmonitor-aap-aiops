@@ -564,7 +564,7 @@ LM sends alert that doesn't match any explicit rulebook rule
 
 2. **Configure toolsets.** Enable at minimum the `job_management` and `inventory_management` toolsets. These allow Edwin AI to discover job templates, query inventory hosts, check job history, and launch automation -- all within the boundaries of the authenticated user's RBAC permissions.
 
-3. **Create the escalation job template.**
+3. **Create the escalation job template.** The "Escalate to Edwin AI" template (`playbooks/escalate_to_edwin_ai.yml`) receives the raw alert payload from the catch-all rule and sends it to Edwin AI for investigation.
 
 | Field | Value |
 |-------|-------|
