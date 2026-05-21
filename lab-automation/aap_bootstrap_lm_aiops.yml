@@ -1,0 +1,200 @@
+---
+# Bootstrap AAP Controller with LM AIOps demo objects.
+# Assumes base workshop bootstrap has run (default org, network inventory, EE exist).
+# Pattern adapted from zt-network-automation-workshop/lab-automation/playbooks/tasks/controller_workshop_objects.yml
+
+- name: Bootstrap AAP Controller for LM AIOps demo
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    controller_host: "{{ lookup('ansible.builtin.env', 'CONTROLLER_HOST') | default('https://localhost', true) }}"
+    controller_username: "{{ lookup('ansible.builtin.env', 'CONTROLLER_USERNAME') | default('admin', true) }}"
+    controller_password: "{{ lookup('ansible.builtin.env', 'CONTROLLER_PASSWORD') | default('ansible123!', true) }}"
+    controller_verify_ssl: false
+
+    lm_aiops_org: "Network Ops"
+    lm_aiops_project_name: "LM AIOps Solution Guide"
+    lm_aiops_project_url: ""
+    lm_aiops_inventory: "BGP Lab Inventory"
+    lm_aiops_credential: "Workshop Credential"
+    lm_aiops_ee: "Default execution environment"
+
+  tasks:
+    # --- Organization ---
+    - name: Ensure Network Ops organization exists
+      ansible.controller.organization:
+        name: "{{ lm_aiops_org }}"
+        description: "Network Operations — LM AIOps demo"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
+    # --- LM API Credential (custom credential type) ---
+    - name: Create LM API credential type
+      ansible.controller.credential_type:
+        name: "LogicMonitor API"
+        kind: cloud
+        inputs:
+          fields:
+            - id: lm_company
+              label: "LM Company Name"
+              type: string
+            - id: lm_bearer_token
+              label: "LM Bearer Token"
+              type: string
+              secret: true
+          required:
+            - lm_company
+            - lm_bearer_token
+        injectors:
+          extra_vars:
+            lm_company: "{{ lm_company }}"
+            lm_bearer_token: "{{ lm_bearer_token }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
+    # --- Edwin AI Credential (custom credential type) ---
+    - name: Create Edwin AI credential type
+      ansible.controller.credential_type:
+        name: "Edwin AI API"
+        kind: cloud
+        inputs:
+          fields:
+            - id: edwin_portal
+              label: "Edwin AI Portal"
+              type: string
+            - id: edwin_access_id
+              label: "Edwin AI Access ID"
+              type: string
+            - id: edwin_access_key
+              label: "Edwin AI Access Key"
+              type: string
+              secret: true
+          required:
+            - edwin_portal
+            - edwin_access_id
+            - edwin_access_key
+        injectors:
+          extra_vars:
+            edwin_portal: "{{ edwin_portal }}"
+            edwin_access_id: "{{ edwin_access_id }}"
+            edwin_access_key: "{{ edwin_access_key }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
+    # --- CRAWL: Job Template ---
+    - name: "Job template — Reset BGP Session (Crawl)"
+      ansible.controller.job_template:
+        name: "Reset BGP Session"
+        job_type: run
+        organization: "{{ lm_aiops_org }}"
+        project: "{{ lm_aiops_project_name }}"
+        playbook: "playbooks/reset_bgp_session.yml"
+        inventory: "{{ lm_aiops_inventory }}"
+        credentials:
+          - "{{ lm_aiops_credential }}"
+        ask_variables_on_launch: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
+    # --- WALK: Workflow Template ---
+    # Individual job templates for workflow nodes
+    - name: "Job template — Enrich with Edwin AI (Walk)"
+      ansible.controller.job_template:
+        name: "Enrich with Edwin AI"
+        job_type: run
+        organization: "{{ lm_aiops_org }}"
+        project: "{{ lm_aiops_project_name }}"
+        playbook: "playbooks/enrich_with_edwin_ai.yml"
+        inventory: "{{ lm_aiops_inventory }}"
+        credentials:
+          - "{{ lm_aiops_credential }}"
+        ask_variables_on_launch: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
+    - name: "Job template — Bounce Interface (Walk)"
+      ansible.controller.job_template:
+        name: "Bounce Interface"
+        job_type: run
+        organization: "{{ lm_aiops_org }}"
+        project: "{{ lm_aiops_project_name }}"
+        playbook: "playbooks/bounce_interface.yml"
+        inventory: "{{ lm_aiops_inventory }}"
+        credentials:
+          - "{{ lm_aiops_credential }}"
+        ask_variables_on_launch: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
+    - name: "Job template — Rollback Config (Walk)"
+      ansible.controller.job_template:
+        name: "Rollback Config"
+        job_type: run
+        organization: "{{ lm_aiops_org }}"
+        project: "{{ lm_aiops_project_name }}"
+        playbook: "playbooks/rollback_config.yml"
+        inventory: "{{ lm_aiops_inventory }}"
+        credentials:
+          - "{{ lm_aiops_credential }}"
+        ask_variables_on_launch: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
+    # --- RUN: Job Template ---
+    - name: "Job template — Escalate to Edwin AI (Run)"
+      ansible.controller.job_template:
+        name: "Escalate to Edwin AI"
+        job_type: run
+        organization: "{{ lm_aiops_org }}"
+        project: "{{ lm_aiops_project_name }}"
+        playbook: "playbooks/escalate_to_edwin_ai.yml"
+        inventory: "{{ lm_aiops_inventory }}"
+        credentials:
+          - "{{ lm_aiops_credential }}"
+        ask_variables_on_launch: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
+    # --- Shared: Report to LM ---
+    - name: "Job template — Report to LogicMonitor"
+      ansible.controller.job_template:
+        name: "Report to LogicMonitor"
+        job_type: run
+        organization: "{{ lm_aiops_org }}"
+        project: "{{ lm_aiops_project_name }}"
+        playbook: "playbooks/report_to_logicmonitor.yml"
+        inventory: "{{ lm_aiops_inventory }}"
+        credentials:
+          - "{{ lm_aiops_credential }}"
+        ask_variables_on_launch: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
