@@ -1,0 +1,23 @@
+# Temporary files
+tmp/
+
+# Python
+*.pyc
+__pycache__/
+.venv/
+
+# Ansible
+*.retry
+
+# ContainerLab
+clab-*/
+.clab.yml.bak
+
+# Secrets
+*.vault
+*vault*.yml
+!*vault*.yml.example
+
+# IDE
+.vscode/
+.idea/
