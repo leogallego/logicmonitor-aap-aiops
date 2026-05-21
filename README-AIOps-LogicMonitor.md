@@ -204,6 +204,7 @@ Four integration surfaces are used across the three maturity stages:
 ## Stage 1 -- Crawl: Event-Driven Network Remediation
 
 **Integration surface:** EDA webhook
+**Operational impact:** Low -- deterministic remediation of known alerts, no AI dependency
 **Story:** Known alert, known fix. Deterministic, no AI involved.
 
 The Crawl stage handles the simplest and most common case: a well-understood alert type with a pre-defined remediation playbook. There is no AI enrichment and no agentic behavior. The EDA rulebook matches the alert type and triggers the corresponding job template.
@@ -261,7 +262,23 @@ The rulebook evaluates the alert and matches the Crawl rule:
           alert_id: "{{ event.payload.id }}"
 ```
 
-The "Reset BGP Session" job template (`playbooks/reset_bgp_session.yml`) targets the affected device, clears all BGP sessions, waits for peers to re-establish, and validates the recovery. On success, it reports the remediation result back to LogicMonitor via `playbooks/report_to_logicmonitor.yml`, which acknowledges and annotates the alert.
+The "Reset BGP Session" job template (`playbooks/reset_bgp_session.yml`) targets the affected device, clears all BGP sessions, waits for peers to re-establish, and validates the recovery. On success, it reports the remediation result back to LogicMonitor via `playbooks/report_to_logicmonitor.yml`, which acknowledges and annotates the alert:
+
+```yaml
+- name: Acknowledge alert in LogicMonitor
+  ansible.builtin.uri:
+    url: "https://{{ lm_company }}.logicmonitor.com/santaba/rest/alert/alerts/{{ alert_id }}/ack"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ lm_bearer_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      ackComment: >-
+        Automated remediation by AAP: {{ remediation_result }}
+        on host {{ remediation_host }}.
+    status_code: [200, 202]
+```
 
 **Incident simulation:** To demonstrate the Crawl stage, run `playbooks/simulate_bgp_down.yml` to shut down an interface on a cEOS router, breaking BGP peering. This triggers the LM alert that starts the remediation flow.
 
@@ -321,6 +338,7 @@ router2                    : ok=6    changed=0    unreachable=0    failed=0
 ## Stage 2 -- Walk: AI-Enriched Remediation
 
 **Integration surface:** EDA webhook + Edwin AI query API
+**Operational impact:** Medium -- adds Edwin AI dependency for enrichment, with Crawl-stage fallback if unavailable
 **Story:** Known alert, but the right fix depends on root cause. Edwin AI provides the context that determines which remediation branch to run.
 
 The Walk stage handles alerts where the symptom is well-known but the underlying cause varies. Rather than always applying the same fix, the workflow first queries Edwin AI for correlated alerts and insights, determines the most likely root cause, and then branches to the appropriate remediation playbook.
@@ -375,7 +393,19 @@ injectors:
     edwin_access_key: "{{ edwin_access_key }}"
 ```
 
-2. **Create the workflow template.** Build the "BGP Smart Remediation" workflow in AAP Controller with the following topology:
+2. **Create the workflow job templates.** The workflow nodes require these job templates (created by the AAP bootstrap or manually):
+
+| Field | Enrich with Edwin AI | Bounce Interface | Rollback Config |
+|-------|---------------------|------------------|-----------------|
+| Job Type | Run | Run | Run |
+| Organization | Network Ops | Network Ops | Network Ops |
+| Project | LM AIOps Solution Guide | LM AIOps Solution Guide | LM AIOps Solution Guide |
+| Playbook | `playbooks/enrich_with_edwin_ai.yml` | `playbooks/bounce_interface.yml` | `playbooks/rollback_config.yml` |
+| Inventory | BGP Lab Inventory | BGP Lab Inventory | BGP Lab Inventory |
+| Credentials | Edwin AI API, Workshop Credential | Workshop Credential | Workshop Credential |
+| Ask Variables on Launch | Yes | Yes | Yes |
+
+3. **Create the workflow template.** Build the "BGP Smart Remediation" workflow in AAP Controller with the following topology:
 
 ```
 +---------------------+
@@ -413,7 +443,21 @@ BGP sessions are flapping (repeatedly going up and down) on a router. The surfac
 | BGP flapping + config change event 5 minutes ago | Config drift | Roll back to last known good config (`playbooks/rollback_config.yml`) |
 | Only BGP flapping, no correlated alerts | Unknown / transient | Default BGP reset (Crawl fallback) |
 
-The enrichment playbook (`playbooks/enrich_with_edwin_ai.yml`) uses `logicmonitor.edwin_ai.query_api` to query Edwin AI for recent alerts and insights on the affected device. It processes the response, determines the most likely root cause via correlated alert type analysis, and passes the finding as a workflow artifact using `ansible.builtin.set_stats`:
+The enrichment playbook (`playbooks/enrich_with_edwin_ai.yml`) uses `logicmonitor.edwin_ai.query_api` to query Edwin AI for recent alerts and insights on the affected device:
+
+```yaml
+- name: Query Edwin AI for correlated alerts
+  logicmonitor.edwin_ai.query_api:
+    portal: "{{ edwin_portal }}"
+    access_id: "{{ edwin_access_id }}"
+    access_key: "{{ edwin_access_key }}"
+    record_type: alerts
+    limit: 20
+    lookback_window: "{{ edwin_lookback_window }}"
+  register: __edwin_alerts
+```
+
+It processes the response, determines the most likely root cause via correlated alert type analysis, and passes the finding as a workflow artifact using `ansible.builtin.set_stats`:
 
 ```yaml
 - name: Set workflow artifacts for downstream nodes
@@ -473,7 +517,7 @@ Workflow "BGP Smart Remediation" -- Status: Successful
 | Component | Details |
 |-----------|---------|
 | EDA source | `ansible.eda.webhook` (same as Crawl) |
-| Rulebook | Adds `bgp_flapping` → workflow rule |
+| Rulebook | Adds `bgp_flapping` -> workflow rule |
 | Workflow Template | "BGP Smart Remediation" (4-5 nodes) |
 | Enrichment playbook | `playbooks/enrich_with_edwin_ai.yml` (uses `logicmonitor.edwin_ai.query_api`) |
 | Remediation playbooks | `playbooks/bounce_interface.yml`, `playbooks/rollback_config.yml` |
@@ -485,6 +529,7 @@ Workflow "BGP Smart Remediation" -- Status: Successful
 ## Stage 3 -- Run: Agentic AIOps with MCP
 
 **Integration surface:** EDA webhook + AAP MCP Server
+**Operational impact:** High -- agentic AI investigation with MCP, requires AAP MCP Server and Edwin AI connectivity
 **Story:** Unknown alert -- no rulebook rule matches. Instead of dropping the event or paging a human, EDA escalates to Edwin AI, which investigates and acts as an intelligent agent via the AAP MCP Server.
 
 The Run stage handles the long tail of alerts that do not match any explicit rulebook rule. This is where the gap is widest in traditional operations: novel alert types, cascading failures, alerts from recently onboarded device types, or unusual combinations that have never been codified into runbooks. These events typically result in pages to the on-call team. With Run-stage AIOps, Edwin AI picks up the investigation.
@@ -516,7 +561,19 @@ LM sends alert that doesn't match any explicit rulebook rule
 
 2. **Configure toolsets.** Enable at minimum the `job_management` and `inventory_management` toolsets. These allow Edwin AI to discover job templates, query inventory hosts, check job history, and launch automation -- all within the boundaries of the authenticated user's RBAC permissions.
 
-3. **Create the escalation job template.** The "Escalate to Edwin AI" template (`playbooks/escalate_to_edwin_ai.yml`) receives the raw alert payload from the catch-all rule and sends it to Edwin AI for investigation.
+3. **Create the escalation job template.**
+
+| Field | Value |
+|-------|-------|
+| Name | Escalate to Edwin AI |
+| Job Type | Run |
+| Organization | Network Ops |
+| Project | LM AIOps Solution Guide |
+| Playbook | `playbooks/escalate_to_edwin_ai.yml` |
+| Inventory | BGP Lab Inventory |
+| Credentials | Edwin AI API, Workshop Credential |
+| Ask Variables on Launch | Yes |
+| Extra Variables | `raw_alert` (from EDA), `source` (from EDA) |
 
 ### Use Case: Unknown Network Degradation
 
@@ -733,9 +790,9 @@ Hands-on demonstrations and video walkthroughs for this solution guide are plann
 
 ### Related Solution Guides
 
-- **Instana + AAP** -- Observability-driven automation with IBM Instana
-- **Splunk + AAP** -- SIEM-driven event response and remediation
-- **ServiceNow + AAP** -- ITSM-integrated change management and incident response
+- [**Instana + AAP**](https://ansible-tmm.github.io/solution-guides/Instana-AIOps/) -- Observability-driven automation with IBM Instana
+- [**Splunk + AAP**](https://ansible-tmm.github.io/solution-guides/AIOps-Splunk-ITSI/) -- SIEM-driven event response and remediation
+- [**ServiceNow + AAP**](https://ansible-tmm.github.io/solution-guides/AIOps-ServiceNow/) -- ITSM-integrated change management and incident response
 
 ### Next Steps
 
