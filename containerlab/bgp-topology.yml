@@ -1,0 +1,79 @@
+---
+name: lm-aiops-bgp
+
+topology:
+  kinds:
+    arista_ceos:
+      image: ceos:latest
+
+  nodes:
+    router1:
+      kind: arista_ceos
+      startup-config: |
+        hostname router1
+        !
+        interface Ethernet1
+          no switchport
+          ip address 10.1.12.1/30
+        !
+        interface Ethernet2
+          no switchport
+          ip address 10.1.13.1/30
+        !
+        interface Loopback0
+          ip address 1.1.1.1/32
+        !
+        router bgp 64501
+          router-id 1.1.1.1
+          neighbor 10.1.12.2 remote-as 64502
+          neighbor 10.1.13.2 remote-as 64503
+          network 1.1.1.1/32
+
+    router2:
+      kind: arista_ceos
+      startup-config: |
+        hostname router2
+        !
+        interface Ethernet1
+          no switchport
+          ip address 10.1.12.2/30
+        !
+        interface Ethernet2
+          no switchport
+          ip address 10.2.23.1/30
+        !
+        interface Loopback0
+          ip address 2.2.2.2/32
+        !
+        router bgp 64502
+          router-id 2.2.2.2
+          neighbor 10.1.12.1 remote-as 64501
+          neighbor 10.2.23.2 remote-as 64503
+          network 2.2.2.2/32
+
+    router3:
+      kind: arista_ceos
+      startup-config: |
+        hostname router3
+        !
+        interface Ethernet1
+          no switchport
+          ip address 10.1.13.2/30
+        !
+        interface Ethernet2
+          no switchport
+          ip address 10.2.23.2/30
+        !
+        interface Loopback0
+          ip address 3.3.3.3/32
+        !
+        router bgp 64503
+          router-id 3.3.3.3
+          neighbor 10.1.13.1 remote-as 64501
+          neighbor 10.2.23.1 remote-as 64502
+          network 3.3.3.3/32
+
+  links:
+    - endpoints: ["router1:eth1", "router2:eth1"]
+    - endpoints: ["router1:eth2", "router3:eth1"]
+    - endpoints: ["router2:eth2", "router3:eth2"]
