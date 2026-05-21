@@ -112,7 +112,7 @@ Community MCP server wrapping the LogicMonitor REST API.
 
 Internal Red Hat partner guide for building AIOps integrations with AAP.
 
-- **Location:** `/home/lgallego/Documents/Partnering with Red Hat for AIOps.pdf`
+- **File:** `Partnering with Red Hat for AIOps.pdf` (internal document)
 - **Version:** 1.0, April 15, 2026
 - **Key concepts:**
   - Value chain: Detect → Analyze → Recommend → Govern → Execute → Report
@@ -154,7 +154,7 @@ Reference guides from other partner integrations.
 RHDP (Red Hat Demo Platform) network automation workshop used as base infrastructure for the LM AIOps demo.
 
 - **Source:** https://github.com/rhpds/zt-network-automation-workshop
-- **Local copy:** `/home/lgallego/Claude/zt-network-automation-workshop`
+- **Source repo:** https://github.com/rhpds/zt-network-automation-workshop
 - **License:** MIT
 - **Platform:** RHDP (Showroom), KubeVirt VMs, AAP 2.6
 
@@ -310,7 +310,7 @@ Hands-on Instruqt lab for event-driven network automation with Cisco and Arista 
 
 Summit demo showing WAN circuit failover with NetBox as source of truth + EDA + AAP 2.6. Candidate for future integration with the LM AIOps solution guide.
 
-- **Local copy:** `/home/lgallego/Claude/summit-netbox-circuits-demo`
+- **Source repo:** https://github.com/leogallego/summit-netbox-circuits-demo
 - **Source:** https://github.com/leogallego/summit-netbox-circuits-demo
 - **Author:** lgallego
 - **License:** (internal demo)

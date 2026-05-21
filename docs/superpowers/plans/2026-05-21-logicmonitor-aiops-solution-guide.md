@@ -8,7 +8,7 @@
 
 **Tech Stack:** Ansible Automation Platform 2.6, Event-Driven Ansible, ContainerLab with Arista cEOS, LogicMonitor, Edwin AI, AAP MCP Server, `arista.eos` / `logicmonitor.integration` / `logicmonitor.edwin_ai` collections.
 
-**Base Infrastructure:** The `zt-network-automation-workshop` repo (local copy at `/home/lgallego/Claude/zt-network-automation-workshop`) provides reusable RHDP infrastructure: ContainerLab VM image with auto-resume, AAP 2.6 Controller with bootstrap automation (`ansible.controller` modules for orgs, inventories, credentials, job templates, RBAC), Arista group vars, and LB port-forwarding patterns. We build our BGP topology, EDA components, workflow templates, and LM/Edwin AI integration on top of this foundation. See `resources/reference.md` section "Network Lab Base" for full details.
+**Base Infrastructure:** The `zt-network-automation-workshop` repo (https://github.com/rhpds/zt-network-automation-workshop`) provides reusable RHDP infrastructure: ContainerLab VM image with auto-resume, AAP 2.6 Controller with bootstrap automation (`ansible.controller` modules for orgs, inventories, credentials, job templates, RBAC), Arista group vars, and LB port-forwarding patterns. We build our BGP topology, EDA components, workflow templates, and LM/Edwin AI integration on top of this foundation. See `resources/reference.md` section "Network Lab Base" for full details.
 
 **Note on LM API access:** Several tasks require live LogicMonitor and Edwin AI API access (not yet available). These steps are marked with `[REQUIRES LM ACCESS]` and should use placeholder values until credentials are available, then be updated with real payload structures.
 
@@ -55,7 +55,7 @@ logicmonitor/
         └── plans/                         # this plan
 
 # Base infrastructure (not in this repo, adapted from):
-# /home/lgallego/Claude/zt-network-automation-workshop/
+# https://github.com/rhpds/zt-network-automation-workshop/
 #   lab-automation/playbooks/aap_bootstrap.yml          — AAP bootstrap pattern (orgs, inventories, creds, RBAC)
 #   lab-automation/playbooks/tasks/controller_*.yml      — Controller object creation tasks
 #   lab-automation/inventory/                            — Inventory structure + group_vars pattern
@@ -72,12 +72,12 @@ logicmonitor/
 - Create: `CLAUDE.md`
 - Create: directory structure (`containerlab/`, `playbooks/`, `rulebooks/`, `inventory/`, `validation/`, `lab-automation/`)
 
-**Base reference:** The `zt-network-automation-workshop` repo at `/home/lgallego/Claude/zt-network-automation-workshop` provides patterns for AAP bootstrap, inventory, and ContainerLab setup. Review `lab-automation/playbooks/aap_bootstrap.yml` and `lab-automation/playbooks/tasks/controller_workshop_objects.yml` for the `ansible.controller` module patterns used in our AAP bootstrap task.
+**Base reference:** The `zt-network-automation-workshop` repo at `https://github.com/rhpds/zt-network-automation-workshop` provides patterns for AAP bootstrap, inventory, and ContainerLab setup. Review `lab-automation/playbooks/aap_bootstrap.yml` and `lab-automation/playbooks/tasks/controller_workshop_objects.yml` for the `ansible.controller` module patterns used in our AAP bootstrap task.
 
 - [ ] **Step 1: Initialize git repository**
 
 ```bash
-cd /home/lgallego/Claude/logicmonitor
+cd .
 git init
 ```
 
@@ -1523,7 +1523,7 @@ git diff --cached --stat && git commit -m "chore: final cleanup and review"
 
 ### NetBox WAN Circuit Failover Integration
 
-The `summit-netbox-circuits-demo` (local copy at `/home/lgallego/Claude/summit-netbox-circuits-demo`) is a Summit demo showing automated WAN circuit failover using NetBox as source of truth + EDA + AAP 2.6. It could be integrated as an additional use case or "Going Further" section in the solution guide.
+The `summit-netbox-circuits-demo` (https://github.com/leogallego/summit-netbox-circuits-demo`) is a Summit demo showing automated WAN circuit failover using NetBox as source of truth + EDA + AAP 2.6. It could be integrated as an additional use case or "Going Further" section in the solution guide.
 
 **Integration possibilities:**
 

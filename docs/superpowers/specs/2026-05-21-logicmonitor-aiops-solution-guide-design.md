@@ -441,7 +441,7 @@ The final rulebook shows the crawl-walk-run progression in a single file — rul
 
 ## Demo Environment
 
-**Base infrastructure:** Adapted from `zt-network-automation-workshop` (https://github.com/rhpds/zt-network-automation-workshop, local copy at `/home/lgallego/Claude/zt-network-automation-workshop`). The workshop provides an RHDP-ready environment with a ContainerLab VM (`ansiblebu-containerlab-v2`, 32Gi/12 cores), an AAP 2.6 Controller VM (`aap-2.6-2-ceh`, 32G/4 cores), and bootstrap automation using `ansible.controller` modules. We reuse the VM images, deploy patterns (including the `containerlab-resume` systemd service), and Controller provisioning patterns while adding our own BGP topology, EDA rulebook, LM-specific job/workflow templates, and Edwin AI integration. See `resources/reference.md` section "Network Lab Base" for full details.
+**Base infrastructure:** Adapted from `zt-network-automation-workshop` (https://github.com/rhpds/zt-network-automation-workshop, https://github.com/rhpds/zt-network-automation-workshop`). The workshop provides an RHDP-ready environment with a ContainerLab VM (`ansiblebu-containerlab-v2`, 32Gi/12 cores), an AAP 2.6 Controller VM (`aap-2.6-2-ceh`, 32G/4 cores), and bootstrap automation using `ansible.controller` modules. We reuse the VM images, deploy patterns (including the `containerlab-resume` systemd service), and Controller provisioning patterns while adding our own BGP topology, EDA rulebook, LM-specific job/workflow templates, and Edwin AI integration. See `resources/reference.md` section "Network Lab Base" for full details.
 
 | Component | Implementation | Notes |
 |-----------|---------------|-------|
