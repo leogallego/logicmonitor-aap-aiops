@@ -2,6 +2,7 @@
 # LogicMonitor AIOps - Network Remediation Rulebook
 # Tiered rules: Crawl (deterministic) → Walk (AI-enriched) → Run (agentic catch-all)
 #
+# Rules are evaluated in order, most specific first.
 # LM webhook payload fields are placeholders until verified against live LM webhook.
 # Update event.payload.* field names to match actual LM alert JSON structure.
 
@@ -23,3 +24,28 @@
             extra_vars:
               affected_host: "{{ event.payload.host }}"
               alert_id: "{{ event.payload.id }}"
+
+    # --- WALK: Known alerts, AI-enriched remediation ---
+    - name: BGP flapping - smart remediation
+      condition: event.payload.type == "bgp_flapping"
+      action:
+        run_workflow_template:
+          name: "BGP Smart Remediation"
+          organization: "Network Ops"
+          job_args:
+            extra_vars:
+              affected_host: "{{ event.payload.host }}"
+              alert_id: "{{ event.payload.id }}"
+              alert_context: "{{ event.payload }}"
+
+    # --- RUN: Unknown alerts, escalate to Edwin AI ---
+    - name: Unmatched alert - escalate to Edwin AI
+      condition: event.payload.type is defined
+      action:
+        run_job_template:
+          name: "Escalate to Edwin AI"
+          organization: "Network Ops"
+          job_args:
+            extra_vars:
+              raw_alert: "{{ event.payload }}"
+              source: "eda_catch_all"
