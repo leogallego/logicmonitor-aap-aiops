@@ -1,0 +1,39 @@
+---
+- name: Simulate BGP peer down by shutting interface
+  hosts: "{{ target_host | default('router2') }}"
+  gather_facts: false
+
+  vars:
+    target_interface: "{{ interface | default('Ethernet1') }}"
+
+  tasks:
+    - name: Show BGP state before disruption
+      arista.eos.eos_command:
+        commands:
+          - show ip bgp summary
+      register: __bgp_before
+
+    - name: Display BGP state before disruption
+      ansible.builtin.debug:
+        var: __bgp_before.stdout_lines[0]
+        verbosity: 1
+
+    - name: Shut down interface to break BGP peering
+      arista.eos.eos_interfaces:
+        config:
+          - name: "{{ target_interface }}"
+            enabled: false
+        state: merged
+
+    - name: Confirm interface is down
+      arista.eos.eos_command:
+        commands:
+          - "show interfaces {{ target_interface }} status"
+      register: __iface_status
+
+    - name: Display post-disruption interface status
+      ansible.builtin.debug:
+        msg: >-
+          Interface {{ target_interface }} shut down on {{ inventory_hostname }}.
+          BGP peering should drop within hold-timer window.
+        verbosity: 0
