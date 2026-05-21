@@ -100,7 +100,6 @@ LogicMonitor and Edwin AI provide the intelligence. AAP provides the trust layer
 | Edwin AI | Portal with API credentials (`access_id`, `access_key`) |
 | AAP MCP Server | Deployed alongside AAP (Technology Preview in AAP 2.6) |
 | Network devices | Devices monitored by LogicMonitor with BGP peering (examples use Arista EOS) |
-| Python | >= 3.9 |
 
 ### Collections
 
