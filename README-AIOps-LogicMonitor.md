@@ -79,7 +79,7 @@ LogicMonitor and Edwin AI provide the intelligence. AAP provides the trust layer
 | **AAP Automation Controller** | Governed execution | Job templates, workflow templates, RBAC, audit logging |
 | **AAP EDA Controller** | Event-driven automation | Rulebook activations, event stream processing, webhook ingestion |
 | **AAP MCP Server** | Agentic AI interface | Enables Edwin AI to discover and invoke AAP automation within RBAC boundaries |
-| **Arista cEOS** | Target infrastructure | ContainerLab-based BGP mesh for demonstration and validation |
+| **Network infrastructure** | Target infrastructure | Network devices monitored by LogicMonitor (examples in this guide use Arista EOS) |
 
 ### Personas
 
@@ -99,8 +99,7 @@ LogicMonitor and Edwin AI provide the intelligence. AAP provides the trust layer
 | LogicMonitor | Active account with API access and webhook configuration |
 | Edwin AI | Portal with API credentials (`access_id`, `access_key`) |
 | AAP MCP Server | Deployed alongside AAP (Technology Preview in AAP 2.6) |
-| ContainerLab | Latest version |
-| Arista cEOS | Container image (requires Arista account to download) |
+| Network devices | Devices monitored by LogicMonitor with BGP peering (examples use Arista EOS) |
 | Python | >= 3.9 |
 
 ### Collections
@@ -109,22 +108,8 @@ LogicMonitor and Edwin AI provide the intelligence. AAP provides the trust layer
 |------------|---------|
 | `logicmonitor.integration` | LM device management and alert acknowledgment |
 | `logicmonitor.edwin_ai` | Edwin AI query API for alert correlation and insights |
-| `arista.eos` | Arista EOS network device automation |
+| `arista.eos` | Network device automation (substitute your platform's collection as needed) |
 | `ansible.eda` | Event-Driven Ansible webhook source plugin |
-
-### Lab Environment
-
-The demonstration uses a ContainerLab topology with three Arista cEOS routers in an eBGP mesh. Each router runs a unique AS number (64501, 64502, 64503) with full-mesh peering over point-to-point links. See `containerlab/bgp-topology.yml` for the complete topology definition.
-
-```
-              router1
-             (AS 64501)
-            /          \
-     Eth1 /            \ Eth2
-         /              \
-    router2 ----Eth2---- router3
-   (AS 64502)          (AS 64503)
-```
 
 ---
 
@@ -183,8 +168,8 @@ The integration maps cleanly across the AIOps value chain, with LogicMonitor and
                                     |
                     +---------------v---------------+
                     |    TARGET INFRASTRUCTURE       |
-                    |  ContainerLab + Arista cEOS    |
-                    |  BGP mesh (3 routers)           |
+                    |  Network devices monitored     |
+                    |  by LogicMonitor                |
                     +-------------------------------+
 ```
 
@@ -212,7 +197,7 @@ The Crawl stage handles the simplest and most common case: a well-understood ale
 ### Flow
 
 ```
-LM detects BGP peer down on Arista router
+LM detects BGP peer down on network device
   -> LM sends webhook (HTTP POST) to EDA Event Stream
     -> Rulebook activation evaluates alert
       -> Condition matches: alert_type == "bgp_peer_down"
@@ -237,8 +222,8 @@ LM detects BGP peer down on Arista router
 | Organization | Network Ops |
 | Project | LM AIOps Solution Guide |
 | Playbook | `playbooks/reset_bgp_session.yml` |
-| Inventory | BGP Lab Inventory |
-| Credentials | Workshop Credential (Machine) |
+| Inventory | Network Inventory |
+| Credentials | Machine Credential |
 | Ask Variables on Launch | Yes |
 | Extra Variables | `affected_host` (from EDA), `alert_id` (from EDA) |
 
@@ -283,47 +268,26 @@ The "Reset BGP Session" job template (`playbooks/reset_bgp_session.yml`) targets
     status_code: [200, 202]
 ```
 
-**Incident simulation:** To demonstrate the Crawl stage, run `playbooks/simulate_bgp_down.yml` to shut down an interface on a cEOS router, breaking BGP peering. This triggers the LM alert that starts the remediation flow.
-
 ### Validation
 
-Run `validation/test_crawl.sh` to send a simulated BGP peer down alert to the EDA webhook. Verify in the AAP Controller that the "Reset BGP Session" job launches targeting the correct host.
+Once configured, trigger a real or test BGP peer down alert in LogicMonitor. Verify in the AAP Controller that the "Reset BGP Session" job launches targeting the correct host.
 
-**Expected output from the validation script:**
-
-```
-=== Crawl Stage Validation ===
-Sending BGP peer down alert to EDA webhook...
-
-HTTP Status: 200
-```
-
-**Expected output in AAP Controller (job "Reset BGP Session"):**
+**Expected result in AAP Controller:**
 
 ```
 PLAY [Reset BGP session on affected device] ************************************
 
-TASK [Gather current BGP summary] **********************************************
-ok: [router2]
-
-TASK [Clear BGP sessions] ******************************************************
-ok: [router2]
-
-TASK [Wait for BGP peers to re-establish] **************************************
-ok: [router2]
-
-TASK [Validate BGP sessions re-established] ************************************
-ok: [router2]
-
 TASK [Assert BGP peers are established] ****************************************
-ok: [router2] => {
+ok: [affected-device] => {
     "changed": false,
     "msg": "BGP peers successfully re-established"
 }
 
 PLAY RECAP *********************************************************************
-router2                    : ok=6    changed=0    unreachable=0    failed=0
+affected-device            : ok=6    changed=0    unreachable=0    failed=0
 ```
+
+For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-LogicMonitor-Demo.md).
 
 ### Components
 
@@ -332,8 +296,7 @@ router2                    : ok=6    changed=0    unreachable=0    failed=0
 | EDA source | `ansible.eda.webhook` on EDA Event Stream |
 | Rulebook | Single rule matching `bgp_peer_down` |
 | Job Template | "Reset BGP Session" |
-| Playbook | `playbooks/reset_bgp_session.yml` (uses `arista.eos.eos_command`) |
-| Simulation | `playbooks/simulate_bgp_down.yml` (shuts interface on cEOS) |
+| Playbook | `playbooks/reset_bgp_session.yml` |
 | Collections | `arista.eos`, `logicmonitor.integration` |
 
 ---
@@ -349,7 +312,7 @@ The Walk stage handles alerts where the symptom is well-known but the underlying
 ### Flow
 
 ```
-LM detects BGP flapping on Arista router
+LM detects BGP flapping on network device
   -> LM sends webhook to EDA Event Stream
     -> Rulebook activation evaluates alert
       -> Condition matches: alert_type == "bgp_flapping"
@@ -404,8 +367,8 @@ injectors:
 | Organization | Network Ops | Network Ops | Network Ops |
 | Project | LM AIOps Solution Guide | LM AIOps Solution Guide | LM AIOps Solution Guide |
 | Playbook | `playbooks/enrich_with_edwin_ai.yml` | `playbooks/bounce_interface.yml` | `playbooks/rollback_config.yml` |
-| Inventory | BGP Lab Inventory | BGP Lab Inventory | BGP Lab Inventory |
-| Credentials | Edwin AI API, Workshop Credential | Workshop Credential | Workshop Credential |
+| Inventory | Network Inventory | BGP Lab Inventory | BGP Lab Inventory |
+| Credentials | Edwin AI API, Machine Credential | Machine Credential | Machine Credential |
 | Ask Variables on Launch | Yes | Yes | Yes |
 
 3. **Create the workflow template.** Build the "BGP Smart Remediation" workflow in AAP Controller with the following topology:
@@ -495,7 +458,7 @@ If Edwin AI supports outbound webhooks or enriched alert forwarding, it can pre-
 
 ### Validation
 
-Run `validation/test_walk.sh` to send a simulated BGP flapping alert to the EDA webhook. Verify in the AAP Controller that the "BGP Smart Remediation" workflow launches, the enrichment node runs first, and the correct remediation branch executes based on the Edwin AI response.
+Trigger a BGP flapping alert in LogicMonitor. Verify in the AAP Controller that the "BGP Smart Remediation" workflow launches, the enrichment node runs first, and the correct remediation branch executes based on the Edwin AI response.
 
 **Expected result in AAP Controller:**
 
@@ -511,9 +474,7 @@ Workflow "BGP Smart Remediation" -- Status: Successful
   Node 3: "Report to LogicMonitor"   -- Status: Successful
 ```
 
-**Incident simulation playbooks:**
-- `playbooks/simulate_interface_errors.yml` -- injects interface errors alongside BGP flapping
-- `playbooks/simulate_config_drift.yml` -- changes BGP neighbor config to cause flapping with a config change event in LM
+For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-LogicMonitor-Demo.md).
 
 ### Components
 
@@ -524,7 +485,6 @@ Workflow "BGP Smart Remediation" -- Status: Successful
 | Workflow Template | "BGP Smart Remediation" (4-5 nodes) |
 | Enrichment playbook | `playbooks/enrich_with_edwin_ai.yml` (uses `logicmonitor.edwin_ai.query_api`) |
 | Remediation playbooks | `playbooks/bounce_interface.yml`, `playbooks/rollback_config.yml` |
-| Simulation playbooks | `playbooks/simulate_interface_errors.yml`, `playbooks/simulate_config_drift.yml` |
 | Collections | `arista.eos`, `logicmonitor.integration`, `logicmonitor.edwin_ai` |
 
 ---
@@ -573,8 +533,8 @@ LM sends alert that doesn't match any explicit rulebook rule
 | Organization | Network Ops |
 | Project | LM AIOps Solution Guide |
 | Playbook | `playbooks/escalate_to_edwin_ai.yml` |
-| Inventory | BGP Lab Inventory |
-| Credentials | Edwin AI API, Workshop Credential |
+| Inventory | Network Inventory |
+| Credentials | Edwin AI API, Machine Credential |
 | Ask Variables on Launch | Yes |
 | Extra Variables | `raw_alert` (from EDA), `source` (from EDA) |
 
@@ -629,27 +589,13 @@ The community `logicmonitor-mcp-server` (125 tools wrapping LM's REST API) can c
 
 ### Validation
 
-Run `validation/test_run.sh` to send a simulated unknown alert type to the EDA webhook. Verify in the AAP Controller that the "Escalate to Edwin AI" job launches and sends the alert context to Edwin AI for MCP-based investigation.
+Send an alert type that does not match any explicit Crawl or Walk rule. Verify in the AAP Controller that the "Escalate to Edwin AI" job launches and the alert context reaches Edwin AI for MCP-based investigation.
 
-**Expected output in AAP Controller (job "Escalate to Edwin AI"):**
+**Expected result in AAP Controller:**
 
-```
-TASK [Log escalation event] ****************************************************
-ok: [localhost] => {
-    "msg": "Escalating unmatched alert to Edwin AI. Alert type: network_anomaly_unknown.
-    Source: eda_catch_all. No matching EDA rule found -- Edwin AI will investigate
-    and recommend remediation via AAP MCP Server."
-}
+The "Escalate to Edwin AI" job completes successfully. Edwin AI receives the alert context and begins investigation via the AAP MCP Server, discovering available templates and recommending remediation.
 
-TASK [Query Edwin AI for context on the unmatched alert] ***********************
-ok: [localhost]
-
-TASK [Send escalation to Edwin AI agent endpoint] *****************************
-ok: [localhost]
-
-PLAY RECAP *********************************************************************
-localhost                  : ok=5    changed=0    unreachable=0    failed=0
-```
+For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-LogicMonitor-Demo.md).
 
 ### Components
 
@@ -672,14 +618,13 @@ localhost                  : ok=5    changed=0    unreachable=0    failed=0
 
 | Stage | Validation step | Expected result |
 |-------|----------------|-----------------|
-| **Crawl** | Send `bgp_peer_down` alert via `validation/test_crawl.sh` | "Reset BGP Session" job launches targeting the correct host |
-| **Crawl** | Run `playbooks/simulate_bgp_down.yml`, then check LM | LM alert fires, EDA triggers reset, BGP re-establishes |
+| **Crawl** | BGP peer down alert fires in LogicMonitor | Webhook delivered to EDA Event Stream |
+| **Crawl** | EDA rulebook evaluates alert | "Reset BGP Session" job launches targeting correct host |
 | **Crawl** | Check LM alert after remediation | Alert acknowledged with AAP annotation |
-| **Walk** | Send `bgp_flapping` alert via `validation/test_walk.sh` | "BGP Smart Remediation" workflow launches |
-| **Walk** | Verify workflow node execution | Enrichment node runs first, correct branch follows |
-| **Walk** | Run `playbooks/simulate_interface_errors.yml` | Edwin AI correlates interface errors, workflow bounces interface |
-| **Walk** | Run `playbooks/simulate_config_drift.yml` | Edwin AI detects config change, workflow rolls back config |
-| **Run** | Send unknown alert via `validation/test_run.sh` | "Escalate to Edwin AI" job launches |
+| **Walk** | BGP flapping alert fires in LogicMonitor | "BGP Smart Remediation" workflow launches |
+| **Walk** | Verify workflow node execution | Enrichment node runs first, correct branch follows based on root cause |
+| **Walk** | Edwin AI returns correlated alerts | Workflow selects appropriate remediation (bounce, rollback, or default reset) |
+| **Run** | Unmatched alert type fires in LogicMonitor | Catch-all rule triggers "Escalate to Edwin AI" job |
 | **Run** | Verify Edwin AI MCP interaction | Edwin AI discovers AAP templates, recommends action |
 | **Run** | Check AAP audit log | Escalation and any MCP-triggered actions are logged |
 
@@ -688,7 +633,7 @@ localhost                  : ok=5    changed=0    unreachable=0    failed=0
 | Issue | Cause | Resolution |
 |-------|-------|------------|
 | Webhook not reaching EDA | Firewall, incorrect URL, or EDA activation not running | Verify network connectivity to EDA port 5000; check rulebook activation status in EDA Controller |
-| BGP not re-establishing after reset | Hold timer not expired, or underlying link still down | Increase wait timeout in `playbooks/reset_bgp_session.yml`; verify ContainerLab link connectivity |
+| BGP not re-establishing after reset | Hold timer not expired, or underlying link still down | Increase wait timeout in `playbooks/reset_bgp_session.yml`; verify link connectivity on affected device |
 | Edwin AI query returns empty results | Incorrect credentials, wrong portal name, or no alerts in lookback window | Verify Edwin AI credential type is attached to the job template; check `edwin_lookback_window` value |
 | Edwin AI timeout during enrichment | Network latency or Edwin AI portal outage | The workflow failure fallback triggers the default BGP reset (Crawl behavior) |
 | MCP Server not connecting | AAP MCP Server not deployed, or toolsets not enabled | Verify `aap-mcp-server` is running; check toolset configuration |
@@ -770,12 +715,11 @@ Track these metrics to quantify the value of each stage:
 
 ## Demos and Labs
 
-Hands-on demonstrations and video walkthroughs for this solution guide are planned. Check back for updates.
-
 | Resource | Status | Description |
 |----------|--------|-------------|
+| [Demo Guide](README-AIOps-LogicMonitor-Demo.md) | Available | Step-by-step lab setup with ContainerLab, Arista cEOS, incident simulation playbooks, and validation scripts |
 | Video walkthrough | Planned | Recorded demo showing the crawl-walk-run progression end-to-end |
-| Live demo environment | Planned | Pre-configured environment with LogicMonitor, AAP 2.6, ContainerLab, and all three stages ready to run |
+| Live demo environment | Planned | Pre-configured environment with LogicMonitor, AAP 2.6, and all three stages ready to run |
 
 ---
 
