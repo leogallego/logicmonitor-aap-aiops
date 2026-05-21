@@ -1,0 +1,24 @@
+---
+- name: Validate BGP state on device
+  hosts: "{{ target_host | default('arista') }}"
+  gather_facts: false
+
+  tasks:
+    - name: Gather BGP summary
+      arista.eos.eos_command:
+        commands:
+          - show ip bgp summary
+      register: __bgp_summary
+
+    - name: Display BGP summary
+      ansible.builtin.debug:
+        var: __bgp_summary.stdout_lines[0]
+        verbosity: 1
+
+    - name: Assert all BGP peers are established
+      ansible.builtin.assert:
+        that:
+          - "'Idle' not in __bgp_summary.stdout[0]"
+          - "'Active' not in __bgp_summary.stdout[0]"
+        fail_msg: "One or more BGP peers are not in Established state"
+        success_msg: "All BGP peers are in Established state"
