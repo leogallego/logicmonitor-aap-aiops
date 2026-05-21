@@ -1,0 +1,22 @@
+---
+- name: Simulate BGP config drift
+  hosts: "{{ target_host | default('router2') }}"
+  gather_facts: false
+
+  tasks:
+    - name: Display simulation intent
+      ansible.builtin.debug:
+        msg: >-
+          Introducing BGP configuration drift on {{ inventory_hostname }}.
+          Changing neighbor AS to cause peering mismatch.
+          Edwin AI should correlate config change event with BGP failure.
+        verbosity: 0
+
+    - name: Introduce wrong AS number for a BGP neighbor
+      arista.eos.eos_bgp_global:
+        config:
+          as_number: "64502"
+          neighbor:
+            - neighbor_address: 10.1.12.1
+              remote_as: 99999
+        state: replaced

@@ -1,0 +1,27 @@
+---
+- name: Simulate interface errors causing BGP flapping
+  hosts: "{{ target_host | default('router2') }}"
+  gather_facts: false
+
+  vars:
+    target_interface: "{{ interface | default('Ethernet1') }}"
+    flap_count: "{{ flaps | default(3) }}"
+
+  tasks:
+    - name: Display simulation parameters
+      ansible.builtin.debug:
+        msg: >-
+          Simulating interface flapping on {{ target_interface }}
+          ({{ flap_count }} flaps) to trigger BGP instability
+          with correlated interface error alerts in LM.
+        verbosity: 0
+
+    - name: Flap interface to generate errors and BGP instability
+      arista.eos.eos_interfaces:
+        config:
+          - name: "{{ target_interface }}"
+            enabled: "{{ item == 'up' }}"
+        state: merged
+      loop: "{{ ['down', 'up'] * (flap_count | int) }}"
+      loop_control:
+        pause: 3
