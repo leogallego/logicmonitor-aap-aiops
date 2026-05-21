@@ -1,10 +1,33 @@
-# LogicMonitor + Ansible Automation Platform: AIOps Solution Guide
+# LogicMonitor + Ansible Automation Platform -- AIOps Solution Guide
 
 **From Alert Noise to Governed Remediation**
 
 Organizations invest heavily in observability, yet most still rely on humans to translate monitoring insights into remediation actions. LogicMonitor and Edwin AI provide the intelligence to detect, analyze, and recommend. Ansible Automation Platform provides the trust layer to govern, execute, and report. Together, they deliver closed-loop AIOps that is safe enough for 3 AM and auditable enough for Monday morning.
 
 This guide walks through a crawl-walk-run maturity progression for BGP network remediation, taking you from simple event-driven automation to AI-enriched workflows to fully agentic AIOps.
+
+| | |
+|---|---|
+| **Operational Impact** | Automated BGP remediation from alert to resolution in seconds (Crawl), AI-enriched root cause routing in minutes (Walk), autonomous investigation of unknown alerts (Run) |
+| **Business Value Drivers** | Reduced MTTR, lower on-call escalation volume, faster incident resolution without increasing headcount |
+| **Technical Value Drivers** | Event-driven automation (EDA), AI-enriched workflow branching (Edwin AI + set_stats), agentic tool discovery via MCP protocol, governed execution with RBAC and audit trails |
+
+---
+
+## Contents
+
+- [Background](#background)
+- [Solution](#solution)
+- [Prerequisites](#prerequisites)
+- [Integration Architecture](#integration-architecture)
+- [Stage 1 -- Crawl: Event-Driven Network Remediation](#stage-1----crawl-event-driven-network-remediation)
+- [Stage 2 -- Walk: AI-Enriched Remediation](#stage-2----walk-ai-enriched-remediation)
+- [Stage 3 -- Run: Agentic AIOps with MCP](#stage-3----run-agentic-aiops-with-mcp)
+- [Validation and Troubleshooting](#validation-and-troubleshooting)
+- [Maturity Path Summary](#maturity-path-summary)
+- [ROI Recap](#roi-recap)
+- [Demos and Labs](#demos-and-labs)
+- [Sources and Next Steps](#sources-and-next-steps)
 
 ---
 
@@ -60,11 +83,11 @@ LogicMonitor and Edwin AI provide the intelligence. AAP provides the trust layer
 
 ### Personas
 
-**Network Operations** -- Faster MTTR. Known BGP issues are resolved automatically in seconds instead of minutes. AI-enriched workflows handle ambiguous failures without manual triage. On-call engineers are paged only for truly novel problems.
-
-**Platform Engineering** -- Governed automation at scale. Every remediation action runs through pre-tested job templates with RBAC controls. Workflow templates encode decision logic that would otherwise live in tribal knowledge. New automation patterns are promoted from ad-hoc to governed as they prove successful.
-
-**Security and Compliance** -- Complete audit trails. Every alert, every decision, every action is logged. Policy as Code ensures automation stays within approved boundaries. Human approval gates can be inserted at any point in the workflow chain.
+| Persona | Challenge | What They Gain |
+|---------|-----------|----------------|
+| **Network Operations** | Manual triage of BGP alerts; slow MTTR; alert fatigue from repetitive incidents | Known issues resolve in seconds. Ambiguous failures are triaged by AI. On-call engineers handle only truly novel problems. |
+| **Platform Engineering** | Remediation logic lives in tribal knowledge; no governed way to encode decision trees | Every action runs through pre-tested job templates with RBAC. Workflow templates encode decision logic. Patterns promote from ad-hoc to governed. |
+| **Security and Compliance** | No audit trail for manual remediation; AI actions bypass governance | Every alert, decision, and action is logged. Policy as Code enforces boundaries. Human approval gates at any point in the chain. |
 
 ---
 
@@ -204,7 +227,19 @@ LM detects BGP peer down on Arista router
 
 2. **Deploy the EDA rulebook.** Create a rulebook activation in the EDA Controller using the rulebook at `rulebooks/logicmonitor_network.yml`. The Crawl-stage rule matches on `event.payload.type == "bgp_peer_down"`.
 
-3. **Create the job template.** Using the AAP bootstrap playbook at `lab-automation/aap_bootstrap_lm_aiops.yml`, or manually, create the "Reset BGP Session" job template pointing to `playbooks/reset_bgp_session.yml`.
+3. **Create the job template.** Using the AAP bootstrap playbook at `lab-automation/aap_bootstrap_lm_aiops.yml`, or manually, create the "Reset BGP Session" job template:
+
+| Field | Value |
+|-------|-------|
+| Name | Reset BGP Session |
+| Job Type | Run |
+| Organization | Network Ops |
+| Project | LM AIOps Solution Guide |
+| Playbook | `playbooks/reset_bgp_session.yml` |
+| Inventory | BGP Lab Inventory |
+| Credentials | Workshop Credential (Machine) |
+| Ask Variables on Launch | Yes |
+| Extra Variables | `affected_host` (from EDA), `alert_id` (from EDA) |
 
 ### Use Case: BGP Peer Down -- Reset Session
 
@@ -233,6 +268,42 @@ The "Reset BGP Session" job template (`playbooks/reset_bgp_session.yml`) targets
 ### Validation
 
 Run `validation/test_crawl.sh` to send a simulated BGP peer down alert to the EDA webhook. Verify in the AAP Controller that the "Reset BGP Session" job launches targeting the correct host.
+
+**Expected output from the validation script:**
+
+```
+=== Crawl Stage Validation ===
+Sending BGP peer down alert to EDA webhook...
+
+HTTP Status: 200
+```
+
+**Expected output in AAP Controller (job "Reset BGP Session"):**
+
+```
+PLAY [Reset BGP session on affected device] ************************************
+
+TASK [Gather current BGP summary] **********************************************
+ok: [router2]
+
+TASK [Clear BGP sessions] ******************************************************
+ok: [router2]
+
+TASK [Wait for BGP peers to re-establish] **************************************
+ok: [router2]
+
+TASK [Validate BGP sessions re-established] ************************************
+ok: [router2]
+
+TASK [Assert BGP peers are established] ****************************************
+ok: [router2] => {
+    "changed": false,
+    "msg": "BGP peers successfully re-established"
+}
+
+PLAY RECAP *********************************************************************
+router2                    : ok=6    changed=0    unreachable=0    failed=0
+```
 
 ### Components
 
@@ -281,7 +352,28 @@ LM detects BGP flapping on Arista router
 
 ### Setup
 
-1. **Configure Edwin AI credentials.** Using the AAP bootstrap (`lab-automation/aap_bootstrap_lm_aiops.yml`), create the "Edwin AI API" custom credential type with `portal`, `access_id`, and `access_key` fields. Attach it to the enrichment job template.
+1. **Configure Edwin AI credentials.** Using the AAP bootstrap (`lab-automation/aap_bootstrap_lm_aiops.yml`), create the "Edwin AI API" custom credential type and attach it to the enrichment job template:
+
+```yaml
+# Custom credential type: Edwin AI API
+inputs:
+  fields:
+    - id: edwin_portal
+      label: "Edwin AI Portal"
+      type: string
+    - id: edwin_access_id
+      label: "Edwin AI Access ID"
+      type: string
+    - id: edwin_access_key
+      label: "Edwin AI Access Key"
+      type: string
+      secret: true
+injectors:
+  extra_vars:
+    edwin_portal: "{{ edwin_portal }}"
+    edwin_access_id: "{{ edwin_access_id }}"
+    edwin_access_key: "{{ edwin_access_key }}"
+```
 
 2. **Create the workflow template.** Build the "BGP Smart Remediation" workflow in AAP Controller with the following topology:
 
@@ -357,6 +449,20 @@ If Edwin AI supports outbound webhooks or enriched alert forwarding, it can pre-
 ### Validation
 
 Run `validation/test_walk.sh` to send a simulated BGP flapping alert to the EDA webhook. Verify in the AAP Controller that the "BGP Smart Remediation" workflow launches, the enrichment node runs first, and the correct remediation branch executes based on the Edwin AI response.
+
+**Expected result in AAP Controller:**
+
+```
+Workflow "BGP Smart Remediation" -- Status: Successful
+
+  Node 1: "Enrich with Edwin AI"     -- Status: Successful
+    Artifacts: root_cause=interface_errors, correlated_alert_count=3
+
+  Node 2a: "Bounce Interface"        -- Status: Successful
+    (Selected based on root_cause artifact)
+
+  Node 3: "Report to LogicMonitor"   -- Status: Successful
+```
 
 **Incident simulation playbooks:**
 - `playbooks/simulate_interface_errors.yml` -- injects interface errors alongside BGP flapping
@@ -465,6 +571,26 @@ The community `logicmonitor-mcp-server` (125 tools wrapping LM's REST API) can c
 
 Run `validation/test_run.sh` to send a simulated unknown alert type to the EDA webhook. Verify in the AAP Controller that the "Escalate to Edwin AI" job launches and sends the alert context to Edwin AI for MCP-based investigation.
 
+**Expected output in AAP Controller (job "Escalate to Edwin AI"):**
+
+```
+TASK [Log escalation event] ****************************************************
+ok: [localhost] => {
+    "msg": "Escalating unmatched alert to Edwin AI. Alert type: network_anomaly_unknown.
+    Source: eda_catch_all. No matching EDA rule found -- Edwin AI will investigate
+    and recommend remediation via AAP MCP Server."
+}
+
+TASK [Query Edwin AI for context on the unmatched alert] ***********************
+ok: [localhost]
+
+TASK [Send escalation to Edwin AI agent endpoint] *****************************
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0
+```
+
 ### Components
 
 | Component | Details |
@@ -472,7 +598,7 @@ Run `validation/test_run.sh` to send a simulated unknown alert type to the EDA w
 | EDA source | `ansible.eda.webhook` (same as Crawl/Walk) |
 | Rulebook | Adds catch-all escalation rule (lowest priority) |
 | Job Template | "Escalate to Edwin AI" |
-| Escalation playbook | `playbooks/escalate_to_edwin_ai.yml` — sends alert context to Edwin AI |
+| Escalation playbook | `playbooks/escalate_to_edwin_ai.yml` -- sends alert context to Edwin AI |
 | AAP MCP Server | `ansible/aap-mcp-server` deployed alongside AAP |
 | MCP Toolsets | `job_management`, `inventory_management` at minimum |
 | Optional | Community LM MCP Server for bidirectional LM exploration |
@@ -582,14 +708,26 @@ Track these metrics to quantify the value of each stage:
 
 ---
 
+## Demos and Labs
+
+Hands-on demonstrations and video walkthroughs for this solution guide are planned. Check back for updates.
+
+| Resource | Status | Description |
+|----------|--------|-------------|
+| Instruqt lab | Planned | Self-paced hands-on lab covering all three stages on a live AAP 2.6 environment |
+| Video walkthrough | Planned | Recorded demo showing the crawl-walk-run progression end-to-end |
+| RHDP demo | Available | Network automation workshop environment (base infrastructure) -- request via RHDP catalog |
+
+---
+
 ## Sources and Next Steps
 
 ### Resources
 
 | Resource | Link |
 |----------|------|
-| `logicmonitor.integration` collection | [Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/logicmonitor/integration/) |
-| `logicmonitor.edwin_ai` collection | [Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/logicmonitor/edwin_ai/) |
+| `logicmonitor.integration` collection | [Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/logicmonitor/integration/) -- not yet available on Automation Hub; install via Galaxy |
+| `logicmonitor.edwin_ai` collection | [Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/logicmonitor/edwin_ai/) -- not yet available on Automation Hub; install via Galaxy |
 | AAP MCP Server | [GitHub](https://github.com/ansible/aap-mcp-server) |
 | Community LM MCP Server | [GitHub](https://github.com/monitoringartist/logicmonitor-mcp-server) |
 | Solution Guides | [ansible-tmm.github.io/solution-guides](https://ansible-tmm.github.io/solution-guides/) |
