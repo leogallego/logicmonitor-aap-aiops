@@ -1,0 +1,50 @@
+---
+- name: Bounce interface to resolve BGP flapping
+  hosts: "{{ affected_host }}"
+  gather_facts: false
+
+  vars:
+    target_interface: "{{ interface | default('Ethernet1') }}"
+
+  tasks:
+    - name: Shut down interface
+      arista.eos.eos_interfaces:
+        config:
+          - name: "{{ target_interface }}"
+            enabled: false
+        state: merged
+
+    - name: Wait for interface to fully go down
+      ansible.builtin.wait_for:
+        timeout: 5
+
+    - name: Bring interface back up
+      arista.eos.eos_interfaces:
+        config:
+          - name: "{{ target_interface }}"
+            enabled: true
+        state: merged
+
+    - name: Wait for BGP to re-establish
+      ansible.builtin.wait_for:
+        timeout: 30
+
+    - name: Validate BGP peers re-established
+      arista.eos.eos_command:
+        commands:
+          - show ip bgp summary
+      register: __bgp_after
+
+    - name: Assert BGP peers are established
+      ansible.builtin.assert:
+        that:
+          - "'Established' in __bgp_after.stdout[0]"
+        fail_msg: "BGP peers did not re-establish after interface bounce"
+        success_msg: "BGP peers re-established after interface bounce"
+
+    - name: Set remediation result
+      ansible.builtin.set_stats:
+        data:
+          remediation_result: "interface_bounce_success"
+          remediation_host: "{{ affected_host }}"
+          alert_id: "{{ alert_id }}"

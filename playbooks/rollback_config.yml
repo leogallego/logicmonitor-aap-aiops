@@ -1,0 +1,41 @@
+---
+- name: Rollback configuration to resolve BGP config drift
+  hosts: "{{ affected_host }}"
+  gather_facts: false
+
+  tasks:
+    - name: Get available configuration sessions
+      arista.eos.eos_command:
+        commands:
+          - show configuration sessions
+      register: __config_sessions
+
+    - name: Rollback to last checkpoint
+      arista.eos.eos_config:
+        replace: config
+        src: "startup-config"
+        backup: true
+
+    - name: Wait for BGP to re-converge after config rollback
+      ansible.builtin.wait_for:
+        timeout: 30
+
+    - name: Validate BGP peers re-established
+      arista.eos.eos_command:
+        commands:
+          - show ip bgp summary
+      register: __bgp_after
+
+    - name: Assert BGP peers are established
+      ansible.builtin.assert:
+        that:
+          - "'Established' in __bgp_after.stdout[0]"
+        fail_msg: "BGP peers did not re-establish after config rollback"
+        success_msg: "BGP peers re-established after config rollback"
+
+    - name: Set remediation result
+      ansible.builtin.set_stats:
+        data:
+          remediation_result: "config_rollback_success"
+          remediation_host: "{{ affected_host }}"
+          alert_id: "{{ alert_id }}"
