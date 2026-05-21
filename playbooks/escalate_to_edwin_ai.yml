@@ -1,0 +1,65 @@
+---
+- name: Escalate unmatched alert to Edwin AI for investigation
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    # Passed from the EDA catch-all rule
+    # raw_alert: {}
+    # source: "eda_catch_all"
+    # edwin_portal: ""
+    # edwin_access_id: ""
+    # edwin_access_key: ""
+
+  tasks:
+    - name: Log escalation event
+      ansible.builtin.debug:
+        msg: >-
+          Escalating unmatched alert to Edwin AI.
+          Alert type: {{ raw_alert.type | default('unknown') }}.
+          Source: {{ source }}.
+          No matching EDA rule found — Edwin AI will investigate
+          and recommend remediation via AAP MCP Server.
+        verbosity: 0
+
+    - name: Query Edwin AI for context on the unmatched alert
+      logicmonitor.edwin_ai.query_api:
+        portal: "{{ edwin_portal }}"
+        access_id: "{{ edwin_access_id }}"
+        access_key: "{{ edwin_access_key }}"
+        record_type: insights
+        limit: 10
+        lookback_window: 3600
+      register: __edwin_insights
+
+    - name: Prepare alert context for Edwin AI agent
+      ansible.builtin.set_fact:
+        __escalation_payload:
+          alert: "{{ raw_alert }}"
+          source: "{{ source }}"
+          edwin_insights: "{{ __edwin_insights.data.results | default([]) }}"
+          timestamp: "{{ ansible_date_time.iso8601 | default(now()) }}"
+
+    - name: Send escalation to Edwin AI agent endpoint
+      ansible.builtin.uri:
+        url: "https://{{ edwin_portal }}.dexda.ai/api/escalation"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ edwin_access_key }}"
+          Content-Type: "application/json"
+        body_format: json
+        body: "{{ __escalation_payload }}"
+        status_code:
+          - 200
+          - 202
+      register: __escalation_result
+      ignore_errors: true
+
+    - name: Report escalation outcome
+      ansible.builtin.debug:
+        msg: >-
+          Edwin AI escalation {{ 'succeeded' if not __escalation_result.failed else 'failed' }}.
+          Edwin AI will connect to AAP MCP Server to discover
+          and recommend remediation actions.
+        verbosity: 0
