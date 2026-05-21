@@ -1,5 +1,7 @@
 # LogicMonitor + Ansible Automation Platform: AIOps Solution Guide
 
+<!-- TODO: Add hero image or architecture screenshot when live environment is available -->
+
 **From Alert Noise to Governed Remediation**
 
 Organizations invest heavily in observability, yet most still rely on humans to translate monitoring insights into remediation actions. LogicMonitor and Edwin AI provide the intelligence to detect, analyze, and recommend. Ansible Automation Platform provides the trust layer to govern, execute, and report. Together, they deliver closed-loop AIOps that is safe enough for 3 AM and auditable enough for Monday morning.
@@ -593,6 +595,8 @@ Send an alert type that does not match any explicit Crawl or Walk rule. Verify i
 **Expected result in AAP Controller:**
 
 The "Escalate to Edwin AI" job completes successfully. Edwin AI receives the alert context and begins investigation via the AAP MCP Server, discovering available templates and recommending remediation.
+
+<!-- TODO: Add screenshot of AAP job log showing escalation when live environment is available -->
 
 For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-LogicMonitor-Demo.md).
 
