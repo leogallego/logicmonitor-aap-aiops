@@ -111,7 +111,7 @@ LogicMonitor and Edwin AI provide the intelligence. AAP provides the trust layer
 | `logicmonitor.integration` | LM device management (devices, collectors, alert rules, device groups) |
 | `logicmonitor.edwin_ai` | Edwin AI query API for alert correlation and insights |
 | `arista.eos` | Network device automation (substitute your platform's collection as needed) |
-| `ansible.eda` | Event-Driven Ansible webhook source plugin |
+| `ansible.eda` | Event-Driven Ansible webhook source plugin, Event Stream management |
 
 ---
 
@@ -181,7 +181,8 @@ Four integration surfaces are used across the three maturity stages:
 
 | Surface | Component | Stage | Role |
 |---------|-----------|-------|------|
-| **EDA webhook** | `ansible.eda.webhook` source plugin | All | Receives LM alert webhooks into EDA Event Streams |
+| **EDA Event Stream** | AAP Event Streams (AAP 2.5+) | All | Platform-managed webhook endpoint with HMAC auth; routes events to rulebook activations |
+| **EDA webhook source** | `ansible.eda.webhook` source plugin | All | Portable webhook source in the rulebook; mapped to an Event Stream at activation time |
 | **LM device management** | `logicmonitor.integration` collection | All | Manages LM devices, collectors, alert rules, device groups |
 | **Edwin AI query** | `logicmonitor.edwin_ai.query_api` module | Walk, Run | Queries Edwin AI for correlated alerts, events, insights |
 | **AAP MCP Server** | `ansible/aap-mcp-server` | Run | Enables Edwin AI to discover and invoke AAP automation |
@@ -225,9 +226,13 @@ LM detects BGP peer down on network device
 
 ### Setup
 
-1. **Configure the LogicMonitor webhook.** In the LM portal, create an integration that sends HTTP POST alerts to your EDA Controller's event stream endpoint. The webhook URL follows the pattern `https://<eda-controller>:5000/logicmonitor`.
+1. **Create an Event Stream in EDA Controller.** In the EDA Controller UI, navigate to Event Streams and create a new stream named "LogicMonitor Alerts". Select an HMAC credential type and save the generated secret -- you will configure LogicMonitor to sign payloads with it. The Event Stream provides a platform-managed URL that handles authentication, TLS, and event routing to rulebook activations.
 
-2. **Deploy the EDA rulebook.** Create a rulebook activation in the EDA Controller using the rulebook at `rulebooks/logicmonitor_network.yml`. The Crawl-stage rule matches on `event.payload.type == "bgp_peer_down"`.
+2. **Configure the LogicMonitor webhook.** In the LM portal, create an integration that sends HTTP POST alerts to the Event Stream URL provided by AAP (not directly to port 5000). Include the HMAC secret for payload signing.
+
+3. **Deploy the EDA rulebook activation.** Create a rulebook activation in the EDA Controller using `rulebooks/logicmonitor_network.yml`. When configuring the activation, map the "LogicMonitor Alerts" Event Stream to the `ansible.eda.webhook` source defined in the rulebook. AAP replaces the source plugin with its internal event delivery mechanism at activation time. The Crawl-stage rule matches on `event.payload.type == "bgp_peer_down"`.
+
+> **Standalone development:** The `ansible.eda.webhook` source in the rulebook works without Event Streams for local testing. POST directly to `http://<eda-host>:5000/logicmonitor` to bypass the Event Stream layer.
 
 3. **Create the job template.** Using the AAP bootstrap playbook at `lab-automation/aap_bootstrap_lm_aiops.yml`, or manually, create the "Reset BGP Session" job template:
 
@@ -309,7 +314,8 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 
 | Component | Details |
 |-----------|---------|
-| EDA source | `ansible.eda.webhook` on EDA Event Stream |
+| Event Stream | "LogicMonitor Alerts" with HMAC credential |
+| EDA source | `ansible.eda.webhook` (mapped to Event Stream at activation time) |
 | Rulebook | Single rule matching `bgp_peer_down` |
 | Job Template | "Reset BGP Session" |
 | Playbook | `playbooks/reset_bgp_session.yml` |
@@ -496,6 +502,7 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 
 | Component | Details |
 |-----------|---------|
+| Event Stream | "LogicMonitor Alerts" (same as Crawl) |
 | EDA source | `ansible.eda.webhook` (same as Crawl) |
 | Rulebook | Adds `bgp_flapping` -> workflow rule |
 | Workflow Template | "BGP Smart Remediation" (5-6 nodes) |
@@ -594,9 +601,9 @@ Every action Edwin AI takes through the MCP Server is governed by the same RBAC 
 
 The Run stage is not a permanent catch-all. As Edwin AI successfully handles certain alert patterns via MCP, those patterns are promoted to Walk or Crawl rules over time. See [The Promotion Pattern](#the-promotion-pattern) for details.
 
-### Going Further: Community LM MCP Server
+### Going Further: LogicMonitor MCP Server
 
-The community `logicmonitor-mcp-server` (125 tools wrapping LM's REST API) can complement the Run stage by enabling AI agents or AAP playbooks to query LogicMonitor directly for device details, alert history, dashboard data, collector status, and topology information. This adds bidirectional depth -- Edwin AI can not only act through AAP but also query LM for richer context during investigation. The community server is not required for the core Run flow but extends the integration surface for teams that want maximum visibility.
+The official LogicMonitor MCP server (`logicmonitor/logicmonitor-api-mcp`, 13 tools wrapping LM's REST API) can complement the Run stage by enabling AI agents to interact with LogicMonitor directly -- acknowledging alerts, querying device metrics, managing SDT windows, and reading OpsNotes. The `lm_alert` tool supports acknowledge, annotate, and escalate actions, which fills the alert lifecycle gap missing from the `logicmonitor.integration` Ansible collection. This adds bidirectional depth: Edwin AI can not only act through AAP but also query and update LM during investigation. The MCP server is not required for the core Run flow but extends the integration surface for teams that want maximum visibility.
 
 ### Validation
 
@@ -614,13 +621,14 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 
 | Component | Details |
 |-----------|---------|
+| Event Stream | "LogicMonitor Alerts" (same as Crawl/Walk) |
 | EDA source | `ansible.eda.webhook` (same as Crawl/Walk) |
 | Rulebook | Adds catch-all escalation rule (lowest priority) |
 | Job Template | "Escalate to Edwin AI" |
 | Escalation playbook | `playbooks/escalate_to_edwin_ai.yml` -- sends alert context to Edwin AI |
 | AAP MCP Server | `ansible/aap-mcp-server` deployed alongside AAP |
 | MCP Toolsets | `job_management`, `inventory_management` at minimum |
-| Optional | Community LM MCP Server for bidirectional LM exploration |
+| Optional | Official LM MCP Server (`logicmonitor/logicmonitor-api-mcp`) for bidirectional LM exploration |
 | Collections | `logicmonitor.integration`, `logicmonitor.edwin_ai` |
 
 ---
@@ -631,7 +639,7 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 
 | Stage | Validation step | Expected result |
 |-------|----------------|-----------------|
-| **Crawl** | BGP peer down alert fires in LogicMonitor | Webhook delivered to EDA Event Stream |
+| **Crawl** | BGP peer down alert fires in LogicMonitor | Webhook delivered to EDA via Event Stream (or directly to port 5000 for standalone testing) |
 | **Crawl** | EDA rulebook evaluates alert | "Reset BGP Session" job launches targeting correct host |
 | **Crawl** | Check LM alert after remediation | Alert acknowledged with AAP annotation |
 | **Walk** | BGP flapping alert fires in LogicMonitor | "BGP Smart Remediation" workflow launches |
@@ -645,7 +653,7 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 
 | Issue | Cause | Resolution |
 |-------|-------|------------|
-| Webhook not reaching EDA | Firewall, incorrect URL, or EDA activation not running | Verify network connectivity to EDA port 5000; check rulebook activation status in EDA Controller |
+| Webhook not reaching EDA | Firewall, incorrect Event Stream URL, HMAC mismatch, or activation not running | Verify Event Stream is active in EDA Controller; check HMAC credential matches LM webhook config; for standalone testing, POST directly to port 5000 |
 | BGP not re-establishing after reset | Hold timer not expired, or underlying link still down | Increase wait timeout in `playbooks/reset_bgp_session.yml`; verify link connectivity on affected device |
 | Edwin AI query returns empty results | Incorrect credentials, wrong portal name, or no alerts in lookback window | Verify Edwin AI credential type is attached to the job template; check `edwin_lookback_window` value |
 | Edwin AI timeout during enrichment | Network latency or Edwin AI portal outage | The workflow failure fallback triggers the default BGP reset (Crawl behavior) |
@@ -759,7 +767,7 @@ The architecture remains the same: LogicMonitor detects, Edwin AI analyzes, and 
 | `logicmonitor.integration` collection | [Automation Hub](https://console.redhat.com/ansible/automation-hub/collections/published/logicmonitor/integration) |
 | `logicmonitor.edwin_ai` collection | [Automation Hub](https://console.redhat.com/ansible/automation-hub/collections/published/logicmonitor/edwin_ai) |
 | AAP MCP Server | [GitHub](https://github.com/ansible/aap-mcp-server) |
-| Community LM MCP Server | [GitHub](https://github.com/monitoringartist/logicmonitor-mcp-server) |
+| LogicMonitor MCP Server | [GitHub](https://github.com/logicmonitor/logicmonitor-api-mcp) |
 | Solution Guides | [ansible-tmm.github.io/solution-guides](https://ansible-tmm.github.io/solution-guides/) |
 
 ### Related Solution Guides
@@ -770,7 +778,7 @@ The architecture remains the same: LogicMonitor detects, Edwin AI analyzes, and 
 
 ### Next Steps
 
-1. **Start with Crawl.** Deploy the EDA rulebook and the "Reset BGP Session" job template. Configure the LogicMonitor webhook. Validate that known BGP alerts trigger deterministic remediation. This can be running in production within a day.
+1. **Start with Crawl.** Create the "LogicMonitor Alerts" Event Stream in EDA Controller with HMAC authentication. Deploy the EDA rulebook activation and map the Event Stream to the webhook source. Create the "Reset BGP Session" job template. Configure the LogicMonitor webhook to POST to the Event Stream URL. Validate that known BGP alerts trigger deterministic remediation. This can be running in production within a day.
 
 2. **Expand to Walk.** Once Crawl-stage automation is proven, add the Edwin AI enrichment workflow. Configure Edwin AI credentials. Build the "BGP Smart Remediation" workflow template. Start with a single ambiguous alert type and expand as the team gains confidence.
 

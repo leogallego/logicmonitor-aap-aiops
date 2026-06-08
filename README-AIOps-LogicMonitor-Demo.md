@@ -136,6 +136,7 @@ This creates:
 | Organization | Network Ops | All |
 | Credential Type | LogicMonitor API | All |
 | Credential Type | Edwin AI API | Walk, Run |
+| Event Stream | LogicMonitor Alerts | All |
 | Job Template | Reset BGP Session | Crawl |
 | Job Template | Enrich with Edwin AI | Walk |
 | Job Template | Bounce Interface | Walk |
@@ -150,17 +151,43 @@ After the bootstrap completes, manually create:
 - **Edwin AI credential** using the "Edwin AI API" credential type with your portal, access ID, and access key
 - **"BGP Smart Remediation" workflow template** with the node topology described in the [Solution Guide](README-AIOps-LogicMonitor.md#stage-2----walk-ai-enriched-remediation)
 
-### 1.6 Configure LogicMonitor Webhook
+### 1.6 Create the EDA Event Stream
 
-In the LogicMonitor portal, create an integration that sends HTTP POST alerts to your EDA Controller:
+In the EDA Controller UI:
 
-- **URL:** `http://<eda-controller>:5000/logicmonitor`
+1. Navigate to **Event Streams** and click **Create Event Stream**
+2. Configure:
+
+| Field | Value |
+|-------|-------|
+| Name | LogicMonitor Alerts |
+| Credential type | HMAC |
+| Organization | Network Ops |
+
+3. Save and copy the **Event Stream URL** and **HMAC secret** -- you will need both for the LogicMonitor webhook configuration
+
+The Event Stream provides a platform-managed endpoint with HMAC authentication. AAP handles TLS, event routing, and credential validation.
+
+### 1.7 Configure LogicMonitor Webhook
+
+In the LogicMonitor portal, create an integration that sends HTTP POST alerts to the Event Stream:
+
+- **URL:** The Event Stream URL from step 1.6 (not `http://<eda-controller>:5000/logicmonitor`)
 - **Method:** POST
 - **Content-Type:** `application/json`
+- **HMAC Secret:** The secret from step 1.6 (for payload signing)
 
-### 1.7 Deploy the EDA Rulebook Activation
+> **Standalone testing:** For local development without Event Streams, POST directly to `http://<eda-controller>:5000/logicmonitor`. The `ansible.eda.webhook` source in the rulebook listens on this endpoint independently.
 
-Create a rulebook activation in the EDA Controller using `rulebooks/logicmonitor_network.yml`. The rulebook listens on port 5000 and contains three rules evaluated in order:
+### 1.8 Deploy the EDA Rulebook Activation
+
+Create a rulebook activation in the EDA Controller using `rulebooks/logicmonitor_network.yml`:
+
+1. Select the rulebook and create an activation
+2. Under **Event Stream mapping**, map the "LogicMonitor Alerts" Event Stream to the `ansible.eda.webhook` source defined in the rulebook
+3. Activate
+
+AAP replaces the webhook source plugin with its internal event delivery at activation time. The rulebook contains three rules evaluated in order:
 
 1. `bgp_peer_down` -- triggers "Reset BGP Session" (Crawl)
 2. `bgp_flapping` -- triggers "BGP Smart Remediation" workflow (Walk)
@@ -435,7 +462,7 @@ This removes all three router containers and the lab network links.
 | Issue | Cause | Resolution |
 |-------|-------|------------|
 | Bootstrap playbook fails | Wrong Controller URL or credentials | Verify `CONTROLLER_HOST`, `CONTROLLER_USERNAME`, `CONTROLLER_PASSWORD` environment variables |
-| EDA webhook not receiving alerts | Port 5000 blocked, activation not started | Check firewall rules for port 5000. Verify the rulebook activation is running in the EDA Controller UI |
+| EDA webhook not receiving alerts | Event Stream misconfigured, HMAC mismatch, or activation not started | Verify Event Stream is active and HMAC credential matches LM webhook config. For standalone testing, POST directly to port 5000 |
 | Wrong job template launches | Rulebook rule ordering | Rules are evaluated top-to-bottom. Verify specific rules (Crawl, Walk) appear before the catch-all (Run) in `rulebooks/logicmonitor_network.yml` |
 | Job template fails with credential error | LM or Edwin AI credentials not created | Create credentials manually using the custom credential types created by the bootstrap |
 | Workflow does not branch correctly | Root cause artifact not set or unexpected value | Check the "Enrich with Edwin AI" job output for `set_stats` artifacts. Review the enrichment playbook logic |
