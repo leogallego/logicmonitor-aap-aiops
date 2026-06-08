@@ -29,6 +29,7 @@
           - 200
           - 202
       register: __ack_result
+      changed_when: __ack_result.status in [200, 202]
 
     - name: Display acknowledgment result
       ansible.builtin.debug:

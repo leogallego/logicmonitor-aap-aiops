@@ -9,6 +9,7 @@
         commands:
           - show configuration sessions
       register: __config_sessions
+      changed_when: false
 
     - name: Rollback to last checkpoint
       arista.eos.eos_config:
@@ -16,15 +17,15 @@
         src: "startup-config"
         backup: true
 
-    - name: Wait for BGP to re-converge after config rollback
-      ansible.builtin.wait_for:
-        timeout: 30
-
-    - name: Validate BGP peers re-established
+    - name: Wait for BGP peers to re-establish after config rollback
       arista.eos.eos_command:
         commands:
           - show ip bgp summary
       register: __bgp_after
+      changed_when: false
+      until: "'Established' in __bgp_after.stdout[0]"
+      retries: 6
+      delay: 5
 
     - name: Assert BGP peers are established
       ansible.builtin.assert:

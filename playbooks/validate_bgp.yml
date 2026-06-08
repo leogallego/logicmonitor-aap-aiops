@@ -9,6 +9,7 @@
         commands:
           - show ip bgp summary
       register: __bgp_summary
+      changed_when: false
 
     - name: Display BGP summary
       ansible.builtin.debug:

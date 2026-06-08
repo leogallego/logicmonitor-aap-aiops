@@ -15,8 +15,8 @@
         state: merged
 
     - name: Wait for interface to fully go down
-      ansible.builtin.wait_for:
-        timeout: 5
+      ansible.builtin.pause:
+        seconds: 5
 
     - name: Bring interface back up
       arista.eos.eos_interfaces:
@@ -25,15 +25,15 @@
             enabled: true
         state: merged
 
-    - name: Wait for BGP to re-establish
-      ansible.builtin.wait_for:
-        timeout: 30
-
-    - name: Validate BGP peers re-established
+    - name: Wait for BGP peers to re-establish
       arista.eos.eos_command:
         commands:
           - show ip bgp summary
       register: __bgp_after
+      changed_when: false
+      until: "'Established' in __bgp_after.stdout[0]"
+      retries: 6
+      delay: 5
 
     - name: Assert BGP peers are established
       ansible.builtin.assert:

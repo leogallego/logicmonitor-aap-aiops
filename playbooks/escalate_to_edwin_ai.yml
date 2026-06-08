@@ -54,6 +54,7 @@
           - 200
           - 202
       register: __escalation_result
+      changed_when: not __escalation_result.failed and __escalation_result.status in [200, 202]
       ignore_errors: true
 
     - name: Report escalation outcome

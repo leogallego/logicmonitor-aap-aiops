@@ -1,17 +1,17 @@
 ---
-- name: Reset BGP session on affected device
+- name: Restart routing process to resolve CPU exhaustion
   hosts: "{{ affected_host }}"
   gather_facts: false
 
   tasks:
-    - name: Gather current BGP summary
+    - name: Capture BGP state before restart
       arista.eos.eos_command:
         commands:
           - show ip bgp summary
       register: __bgp_before
       changed_when: false
 
-    - name: Clear BGP sessions
+    - name: Restart the BGP process
       arista.eos.eos_command:
         commands:
           - clear ip bgp *
@@ -24,19 +24,19 @@
       register: __bgp_after
       changed_when: false
       until: "'Established' in __bgp_after.stdout[0]"
-      retries: 6
+      retries: 9
       delay: 5
 
     - name: Assert BGP peers are established
       ansible.builtin.assert:
         that:
           - "'Established' in __bgp_after.stdout[0]"
-        fail_msg: "BGP peers did not re-establish after reset"
-        success_msg: "BGP peers successfully re-established"
+        fail_msg: "BGP peers did not re-establish after routing process restart"
+        success_msg: "BGP peers re-established after routing process restart"
 
-    - name: Set remediation result for reporting
+    - name: Set remediation result
       ansible.builtin.set_stats:
         data:
-          remediation_result: "bgp_reset_success"
+          remediation_result: "routing_restart_success"
           remediation_host: "{{ affected_host }}"
           alert_id: "{{ alert_id }}"

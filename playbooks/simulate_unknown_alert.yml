@@ -33,6 +33,7 @@
           - 200
           - 202
       register: __webhook_result
+      changed_when: __webhook_result.status in [200, 202]
 
     - name: Confirm alert sent to EDA
       ansible.builtin.debug:

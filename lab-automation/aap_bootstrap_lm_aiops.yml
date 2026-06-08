@@ -146,6 +146,23 @@
         controller_password: "{{ controller_password }}"
         validate_certs: "{{ controller_verify_ssl }}"
 
+    - name: "Job template — Restart Routing (Walk)"
+      ansible.controller.job_template:
+        name: "Restart Routing"
+        job_type: run
+        organization: "{{ lm_aiops_org }}"
+        project: "{{ lm_aiops_project_name }}"
+        playbook: "playbooks/restart_routing.yml"
+        inventory: "{{ lm_aiops_inventory }}"
+        credentials:
+          - "{{ lm_aiops_credential }}"
+        ask_variables_on_launch: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
     - name: "Job template — Rollback Config (Walk)"
       ansible.controller.job_template:
         name: "Rollback Config"

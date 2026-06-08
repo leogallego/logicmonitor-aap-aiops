@@ -12,6 +12,7 @@
         commands:
           - show ip bgp summary
       register: __bgp_before
+      changed_when: false
 
     - name: Display BGP state before disruption
       ansible.builtin.debug:
@@ -30,6 +31,7 @@
         commands:
           - "show interfaces {{ target_interface }} status"
       register: __iface_status
+      changed_when: false
 
     - name: Display post-disruption interface status
       ansible.builtin.debug:
