@@ -139,6 +139,7 @@ This creates:
 | Job Template | Reset BGP Session | Crawl |
 | Job Template | Enrich with Edwin AI | Walk |
 | Job Template | Bounce Interface | Walk |
+| Job Template | Restart Routing | Walk |
 | Job Template | Rollback Config | Walk |
 | Job Template | Escalate to Edwin AI | Run |
 | Job Template | Report to LogicMonitor | All |

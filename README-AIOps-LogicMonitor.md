@@ -6,7 +6,7 @@
 
 Organizations invest heavily in observability, yet most still rely on humans to translate monitoring insights into remediation actions. LogicMonitor and Edwin AI provide the intelligence to detect, analyze, and recommend. Ansible Automation Platform provides the trust layer to govern, execute, and report. Together, they deliver closed-loop AIOps that is safe enough for 3 AM and auditable enough for Monday morning.
 
-This guide walks through a crawl-walk-run maturity progression for BGP network remediation, taking you from simple event-driven automation to AI-enriched workflows to fully agentic AIOps.
+This guide walks through a crawl-walk-run maturity progression for BGP network remediation, taking you from simple event-driven automation to AI-enriched workflows to fully agentic AIOps. While the examples focus on networking, the same pattern applies to any infrastructure domain that LogicMonitor monitors -- servers, storage, cloud, and hybrid IT environments.
 
 | | |
 |---|---|
@@ -28,6 +28,7 @@ This guide walks through a crawl-walk-run maturity progression for BGP network r
 - [Validation and Troubleshooting](#validation-and-troubleshooting)
 - [Maturity Path Summary](#maturity-path-summary)
 - [ROI Recap](#roi-recap)
+- [Extending to Hybrid IT](#extending-to-hybrid-it)
 - [Demos and Labs](#demos-and-labs)
 - [Sources and Next Steps](#sources-and-next-steps)
 
@@ -107,7 +108,7 @@ LogicMonitor and Edwin AI provide the intelligence. AAP provides the trust layer
 
 | Collection | Purpose |
 |------------|---------|
-| `logicmonitor.integration` | LM device management and alert acknowledgment |
+| `logicmonitor.integration` | LM device management (devices, collectors, alert rules, device groups) |
 | `logicmonitor.edwin_ai` | Edwin AI query API for alert correlation and insights |
 | `arista.eos` | Network device automation (substitute your platform's collection as needed) |
 | `ansible.eda` | Event-Driven Ansible webhook source plugin |
@@ -121,15 +122,15 @@ LogicMonitor and Edwin AI provide the intelligence. AAP provides the trust layer
 The integration maps cleanly across the AIOps value chain, with LogicMonitor and Edwin AI owning the left side (intelligence) and AAP owning the right side (execution):
 
 ```
-    LogicMonitor / Edwin AI                    AAP
-  +-----------------------------+  +-----------------------------+
-  | DETECT -> ANALYZE -> RECOMMEND| -> | GOVERN -> EXECUTE -> REPORT   |
-  |                             |  |                             |
-  | LM monitors network devices |  | RBAC, Policy as Code        |
-  | Edwin AI correlates alerts  |  | Pre-tested job templates    |
-  | Edwin AI recommends actions |  | Workflow orchestration      |
-  |                             |  | Audit trails                |
-  +-----------------------------+  +-----------------------------+
+  LogicMonitor / Edwin AI                 AAP
+  +------------------------------+  +------------------------------+
+  | DETECT -> ANALYZE -> RECOMMEND |  | GOVERN -> EXECUTE -> REPORT  |
+  |                                |  |                              |
+  | LM monitors infrastructure    |  | RBAC, Policy as Code         |
+  | Edwin AI correlates alerts     |  | Pre-tested job templates     |
+  | Edwin AI recommends actions    |  | Workflow orchestration       |
+  |                                |  | Audit trails                 |
+  +------------------------------+  +------------------------------+
 ```
 
 ### Overall Architecture
@@ -165,7 +166,7 @@ The integration maps cleanly across the AIOps value chain, with LogicMonitor and
 |                    | arista.eos                   |                  |
 |                    +--------------+--------------+                  |
 |                                   |                                 |
-+-----------------------------------|-------------------------------  +
++-----------------------------------|---------------------------------+
                                     |
                     +---------------v---------------+
                     |    TARGET INFRASTRUCTURE       |
@@ -181,17 +182,31 @@ Four integration surfaces are used across the three maturity stages:
 | Surface | Component | Stage | Role |
 |---------|-----------|-------|------|
 | **EDA webhook** | `ansible.eda.webhook` source plugin | All | Receives LM alert webhooks into EDA Event Streams |
-| **LM device management** | `logicmonitor.integration` collection | All | Manages LM objects, acknowledges alerts, reports back |
+| **LM device management** | `logicmonitor.integration` collection | All | Manages LM devices, collectors, alert rules, device groups |
 | **Edwin AI query** | `logicmonitor.edwin_ai.query_api` module | Walk, Run | Queries Edwin AI for correlated alerts, events, insights |
 | **AAP MCP Server** | `ansible/aap-mcp-server` | Run | Enables Edwin AI to discover and invoke AAP automation |
+
+### Integration Patterns
+
+Each maturity stage uses a different integration pattern with AAP. The patterns differ in how they are triggered, how tightly they couple the partner platform to AAP, and how governance is enforced:
+
+| | **EDA (Crawl)** | **Direct API (Walk)** | **MCP Server (Run)** |
+|---|---|---|---|
+| **Trigger** | Events from buses and webhooks | HTTP request from playbook | Natural language / AI |
+| **Coupling** | Loose (event-based, fire-and-forget) | Tight (ID-based, request/response) | Abstracted (agent-based, protocol-enforced) |
+| **Primary user** | Monitoring / Observability / ITSM | Custom apps / Scripts | AI agents / Humans |
+| **Governance** | Rule-defined (rulebook conditions) | Token-based (API credentials) | Protocol-enforced (RBAC via MCP) |
+| **Response model** | Asynchronous | Synchronous | Synchronous (bidirectional) |
+
+The crawl-walk-run progression moves from left to right across these patterns, with each stage adding integration depth while maintaining AAP's governance guarantees.
 
 ---
 
 ## Stage 1 -- Crawl: Event-Driven Network Remediation
 
-**Integration surface:** EDA webhook
-**Operational impact:** Low -- deterministic remediation of known alerts, no AI dependency
-**Story:** Known alert, known fix. Deterministic, no AI involved.
+- **Integration surface:** EDA webhook
+- **Operational impact:** Low -- deterministic remediation of known alerts, no AI dependency
+- **Story:** Known alert, known fix. Deterministic, no AI involved.
 
 The Crawl stage handles the simplest and most common case: a well-understood alert type with a pre-defined remediation playbook. There is no AI enrichment and no agentic behavior. The EDA rulebook matches the alert type and triggers the corresponding job template.
 
@@ -304,9 +319,9 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 
 ## Stage 2 -- Walk: AI-Enriched Remediation
 
-**Integration surface:** EDA webhook + Edwin AI query API
-**Operational impact:** Medium -- adds Edwin AI dependency for enrichment, with Crawl-stage fallback if unavailable
-**Story:** Known alert, but the right fix depends on root cause. Edwin AI provides the context that determines which remediation branch to run.
+- **Integration surface:** EDA webhook + Edwin AI query API
+- **Operational impact:** Medium -- adds Edwin AI dependency for enrichment, with Crawl-stage fallback if unavailable
+- **Story:** Known alert, but the right fix depends on root cause. Edwin AI provides the context that determines which remediation branch to run.
 
 The Walk stage handles alerts where the symptom is well-known but the underlying cause varies. Rather than always applying the same fix, the workflow first queries Edwin AI for correlated alerts and insights, determines the most likely root cause, and then branches to the appropriate remediation playbook.
 
@@ -362,39 +377,39 @@ injectors:
 
 2. **Create the workflow job templates.** The workflow nodes require these job templates (created by the AAP bootstrap or manually):
 
-| Field | Enrich with Edwin AI | Bounce Interface | Rollback Config |
-|-------|---------------------|------------------|-----------------|
-| Job Type | Run | Run | Run |
-| Organization | Network Ops | Network Ops | Network Ops |
-| Project | LM AIOps Solution Guide | LM AIOps Solution Guide | LM AIOps Solution Guide |
-| Playbook | `playbooks/enrich_with_edwin_ai.yml` | `playbooks/bounce_interface.yml` | `playbooks/rollback_config.yml` |
-| Inventory | Network Inventory | BGP Lab Inventory | BGP Lab Inventory |
-| Credentials | Edwin AI API, Machine Credential | Machine Credential | Machine Credential |
-| Ask Variables on Launch | Yes | Yes | Yes |
+| Field | Enrich with Edwin AI | Bounce Interface | Restart Routing | Rollback Config |
+|-------|---------------------|------------------|-----------------|-----------------|
+| Job Type | Run | Run | Run | Run |
+| Organization | Network Ops | Network Ops | Network Ops | Network Ops |
+| Project | LM AIOps Solution Guide | LM AIOps Solution Guide | LM AIOps Solution Guide | LM AIOps Solution Guide |
+| Playbook | `playbooks/enrich_with_edwin_ai.yml` | `playbooks/bounce_interface.yml` | `playbooks/restart_routing.yml` | `playbooks/rollback_config.yml` |
+| Inventory | Network Inventory | BGP Lab Inventory | BGP Lab Inventory | BGP Lab Inventory |
+| Credentials | Edwin AI API, Machine Credential | Machine Credential | Machine Credential | Machine Credential |
+| Ask Variables on Launch | Yes | Yes | Yes | Yes |
 
 3. **Create the workflow template.** Build the "BGP Smart Remediation" workflow in AAP Controller with the following topology:
 
 ```
-+---------------------+
++----------------------+
 | Enrich with Edwin AI |
 | (query_api)          |
-+----------+----------+
-           |
-     +-----+------------------+
-     |     |                  |
-     v     v                  v
-+--------+ +--------------+ +--------------+
-| Bounce | | Restart      | | Rollback     |
-| Iface  | | Routing      | | Config       |
-+--------+ +--------------+ +--------------+
-                                  |
-                            (on failure)
-                                  |
-                                  v
-                           +--------------+
-                           | Default BGP  |
-                           | Reset        |
-                           +--------------+
++-----------+----------+
+            |
+    +-------+--------+--------+
+    |                |        |
+    v                v        v
++---------+ +----------+ +----------+
+| Bounce  | | Restart  | | Rollback |
+| Iface   | | Routing  | | Config   |
++---------+ +----------+ +----------+
+                               |
+                         (on failure)
+                               |
+                               v
+                        +-------------+
+                        | Default BGP |
+                        | Reset       |
+                        +-------------+
 ```
 
 The workflow uses convergence nodes: each remediation branch runs based on the `root_cause` artifact set by the enrichment node. The failure fallback ensures that even if Edwin AI is unreachable, the workflow still performs a best-effort remediation using the Crawl-stage reset.
@@ -406,7 +421,7 @@ BGP sessions are flapping (repeatedly going up and down) on a router. The surfac
 | Edwin AI finds | Root cause | Workflow branch |
 |----------------|------------|-----------------|
 | BGP flapping + interface error counters spiking | Bad link or cable | Bounce the interface (`playbooks/bounce_interface.yml`) |
-| BGP flapping + CPU at 98% on the device | Resource exhaustion | Restart routing process |
+| BGP flapping + CPU at 98% on the device | Resource exhaustion | Restart routing process (`playbooks/restart_routing.yml`) |
 | BGP flapping + config change event 5 minutes ago | Config drift | Roll back to last known good config (`playbooks/rollback_config.yml`) |
 | Only BGP flapping, no correlated alerts | Unknown / transient | Default BGP reset (Crawl fallback) |
 
@@ -483,18 +498,18 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 |-----------|---------|
 | EDA source | `ansible.eda.webhook` (same as Crawl) |
 | Rulebook | Adds `bgp_flapping` -> workflow rule |
-| Workflow Template | "BGP Smart Remediation" (4-5 nodes) |
+| Workflow Template | "BGP Smart Remediation" (5-6 nodes) |
 | Enrichment playbook | `playbooks/enrich_with_edwin_ai.yml` (uses `logicmonitor.edwin_ai.query_api`) |
-| Remediation playbooks | `playbooks/bounce_interface.yml`, `playbooks/rollback_config.yml` |
+| Remediation playbooks | `playbooks/bounce_interface.yml`, `playbooks/restart_routing.yml`, `playbooks/rollback_config.yml` |
 | Collections | `arista.eos`, `logicmonitor.integration`, `logicmonitor.edwin_ai` |
 
 ---
 
 ## Stage 3 -- Run: Agentic AIOps with MCP
 
-**Integration surface:** EDA webhook + AAP MCP Server
-**Operational impact:** High -- agentic AI investigation with MCP, requires AAP MCP Server and Edwin AI connectivity
-**Story:** Unknown alert -- no rulebook rule matches. Instead of dropping the event or paging a human, EDA escalates to Edwin AI, which investigates and acts as an intelligent agent via the AAP MCP Server.
+- **Integration surface:** EDA webhook + AAP MCP Server
+- **Operational impact:** High -- agentic AI investigation with MCP, requires AAP MCP Server and Edwin AI connectivity
+- **Story:** Unknown alert -- no rulebook rule matches. Instead of dropping the event or paging a human, EDA escalates to Edwin AI, which investigates and acts as an intelligent agent via the AAP MCP Server.
 
 The Run stage handles the long tail of alerts that do not match any explicit rulebook rule. This is where the gap is widest in traditional operations: novel alert types, cascading failures, alerts from recently onboarded device types, or unusual combinations that have never been codified into runbooks. These events typically result in pages to the on-call team. With Run-stage AIOps, Edwin AI picks up the investigation.
 
@@ -575,14 +590,9 @@ Once Edwin AI receives the escalation, it connects to the AAP MCP Server and pro
 
 Every action Edwin AI takes through the MCP Server is governed by the same RBAC policies that apply to human operators. It can only discover and invoke automation that the authenticated user is authorized to use.
 
-### The Progression Promise
+### Pattern Promotion
 
-The Run stage is not a permanent catch-all. Over time, as Edwin AI successfully handles certain alert patterns via MCP, those patterns can be promoted:
-
-- **Run to Walk:** A pattern that Edwin AI consistently resolves with the same enrichment logic becomes a Walk-stage workflow rule with explicit Edwin AI enrichment.
-- **Walk to Crawl:** A Walk-stage pattern where Edwin AI consistently identifies the same root cause becomes a Crawl-stage deterministic rule -- no AI needed.
-
-The catch-all shrinks as the explicit rules grow. The system gets smarter iteratively.
+The Run stage is not a permanent catch-all. As Edwin AI successfully handles certain alert patterns via MCP, those patterns are promoted to Walk or Crawl rules over time. See [The Promotion Pattern](#the-promotion-pattern) for details.
 
 ### Going Further: Community LM MCP Server
 
@@ -716,6 +726,20 @@ Track these metrics to quantify the value of each stage:
 
 ---
 
+## Extending to Hybrid IT
+
+This guide uses BGP network remediation as the reference scenario because network alerts are concrete, easy to simulate, and immediately relatable to operations teams. However, the crawl-walk-run pattern and every integration surface described here apply to any infrastructure domain that LogicMonitor monitors.
+
+| Domain | Crawl example | Walk example | Run example |
+|--------|--------------|--------------|-------------|
+| **Server / OS** | Disk usage alert -> extend LVM | High memory + OOM alerts -> Edwin AI determines leaking process vs. capacity -> targeted restart or scale-out | Unknown performance degradation -> Edwin AI investigates via MCP |
+| **Cloud** | Cloud budget threshold -> rightsizing job | Latency spike + deployment event -> rollback vs. config adjustment | Novel cloud service alert -> agentic investigation |
+| **Storage** | Array health alert -> failover path check | I/O latency + firmware event correlation -> firmware update vs. rebalance | Cascading storage alerts -> Edwin AI triages across arrays |
+
+The architecture remains the same: LogicMonitor detects, Edwin AI analyzes, and AAP governs execution. Only the content collections and remediation playbooks change per domain. Teams that start with network can expand to additional domains by adding new rulebook rules, job templates, and the appropriate content collections.
+
+---
+
 ## Demos and Labs
 
 | Resource | Status | Description |
@@ -732,8 +756,8 @@ Track these metrics to quantify the value of each stage:
 
 | Resource | Link |
 |----------|------|
-| `logicmonitor.integration` collection | [Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/logicmonitor/integration/) -- not yet available on Automation Hub; install via Galaxy |
-| `logicmonitor.edwin_ai` collection | [Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/logicmonitor/edwin_ai/) -- not yet available on Automation Hub; install via Galaxy |
+| `logicmonitor.integration` collection | [Automation Hub](https://console.redhat.com/ansible/automation-hub/collections/published/logicmonitor/integration) |
+| `logicmonitor.edwin_ai` collection | [Automation Hub](https://console.redhat.com/ansible/automation-hub/collections/published/logicmonitor/edwin_ai) |
 | AAP MCP Server | [GitHub](https://github.com/ansible/aap-mcp-server) |
 | Community LM MCP Server | [GitHub](https://github.com/monitoringartist/logicmonitor-mcp-server) |
 | Solution Guides | [ansible-tmm.github.io/solution-guides](https://ansible-tmm.github.io/solution-guides/) |
