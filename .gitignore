@@ -18,8 +18,8 @@ clab-*/
 *vault*.yml
 !*vault*.yml.example
 
-# Internal resources (partner strategy docs, etc.)
-resources/
+# Internal documents (partner strategy, NDA materials, etc.)
+internal/
 
 # IDE
 .vscode/
