@@ -92,6 +92,19 @@
         controller_password: "{{ controller_password }}"
         validate_certs: "{{ controller_verify_ssl }}"
 
+    # --- EDA Event Stream ---
+    - name: Create LogicMonitor Alerts event stream
+      ansible.eda.event_stream:
+        name: "LogicMonitor Alerts"
+        credential_name: "LM Webhook HMAC"
+        organization_name: "{{ lm_aiops_org }}"
+        forward_events: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
     # --- CRAWL: Job Template ---
     - name: "Job template — Reset BGP Session (Crawl)"
       ansible.controller.job_template:
