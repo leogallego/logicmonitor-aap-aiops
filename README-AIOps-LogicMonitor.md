@@ -234,7 +234,7 @@ LM detects BGP peer down on network device
 
 > **Standalone development:** The `ansible.eda.webhook` source in the rulebook works without Event Streams for local testing. POST directly to `http://<eda-host>:5000/logicmonitor` to bypass the Event Stream layer.
 
-3. **Create the job template.** Using the AAP bootstrap playbook at `lab-automation/aap_bootstrap_lm_aiops.yml`, or manually, create the "Reset BGP Session" job template:
+4. **Create the job template.** Using the AAP bootstrap playbook at `lab-automation/aap_bootstrap_lm_aiops.yml`, or manually, create the "Reset BGP Session" job template:
 
 | Field | Value |
 |-------|-------|
