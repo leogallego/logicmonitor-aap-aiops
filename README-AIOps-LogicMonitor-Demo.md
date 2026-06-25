@@ -166,6 +166,8 @@ Create a rulebook activation in the EDA Controller using `rulebooks/logicmonitor
 2. `bgp_flapping` -- triggers "BGP Smart Remediation" workflow (Walk)
 3. Catch-all -- triggers "Escalate to Edwin AI" (Run)
 
+> **Note on debug output:** Demo and simulation playbooks use `verbosity: 0` on debug tasks so that enrichment results, escalation context, and simulation parameters are always visible in the job output. In production roles, set `verbosity: 1` or higher to suppress debug output at default verbosity.
+
 ---
 
 ## Part 2: Crawl Stage Demo

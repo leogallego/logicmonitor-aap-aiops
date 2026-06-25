@@ -347,12 +347,15 @@ LM detects BGP flapping on network device
           |   -> Node 2c: "Rollback Configuration"
           |
           +-- Edwin AI unreachable (failure fallback)
-              -> Node 2d: "Default BGP Reset" (same as Crawl)
+          |   -> Node 2d: "Default BGP Reset" (same as Crawl)
+          |
+          +-- All branches converge
+              -> Node 3: "Report to LogicMonitor" (acknowledge alert)
 ```
 
 ### Setup
 
-1. **Configure Edwin AI credentials.** Using the AAP bootstrap (`lab-automation/aap_bootstrap_lm_aiops.yml`), create the "Edwin AI API" custom credential type and attach it to the enrichment job template:
+1. **Configure Edwin AI credentials.** Using the AAP bootstrap (`lab-automation/aap_bootstrap_lm_aiops.yml`), create the "Edwin AI API" custom credential type. The bootstrap creates the credential *type* but not the credential itself -- after the bootstrap runs, manually create an "Edwin AI API" credential with your portal, access ID, and access key, then attach it to the "Enrich with Edwin AI" and "Escalate to Edwin AI" job templates.
 
 ```yaml
 # Custom credential type: Edwin AI API
@@ -383,36 +386,39 @@ injectors:
 | Organization | Network Ops | Network Ops | Network Ops | Network Ops |
 | Project | LM AIOps Solution Guide | LM AIOps Solution Guide | LM AIOps Solution Guide | LM AIOps Solution Guide |
 | Playbook | `playbooks/enrich_with_edwin_ai.yml` | `playbooks/bounce_interface.yml` | `playbooks/restart_routing.yml` | `playbooks/rollback_config.yml` |
-| Inventory | Network Inventory | BGP Lab Inventory | BGP Lab Inventory | BGP Lab Inventory |
+| Inventory | Network Inventory | Network Inventory | Network Inventory | Network Inventory |
 | Credentials | Edwin AI API, Machine Credential | Machine Credential | Machine Credential | Machine Credential |
 | Ask Variables on Launch | Yes | Yes | Yes | Yes |
 
 3. **Create the workflow template.** Build the "BGP Smart Remediation" workflow in AAP Controller with the following topology:
 
 ```
-+----------------------+
-| Enrich with Edwin AI |
-| (query_api)          |
-+-----------+----------+
-            |
-    +-------+--------+--------+
-    |                |        |
-    v                v        v
-+---------+ +----------+ +----------+
-| Bounce  | | Restart  | | Rollback |
-| Iface   | | Routing  | | Config   |
-+---------+ +----------+ +----------+
-                               |
-                         (on failure)
-                               |
-                               v
-                        +-------------+
-                        | Default BGP |
-                        | Reset       |
-                        +-------------+
+                +----------------------+
+                | Enrich with Edwin AI |
+                | (query_api)          |
+                +---------+------+-----+
+                          |      |
+                       success  failure
+                          |      |
+          +-------+-------+      |
+          |       |       |      |
+          v       v       v      v
+     +---------+ +-----+ +------+ +-------------+
+     | Bounce  | | Re- | | Roll-| | Default BGP |
+     | Iface   | |start| | back | | Reset       |
+     +----+----+ |Rout.| |Config| +------+------+
+          |      +--+--+ +--+---+        |
+          |         |       |            |
+          +---------+-------+------------+
+                    |
+                    v
+           +------------------+
+           | Report to        |
+           | LogicMonitor     |
+           +------------------+
 ```
 
-The workflow uses convergence nodes: each remediation branch runs based on the `root_cause` artifact set by the enrichment node. The failure fallback ensures that even if Edwin AI is unreachable, the workflow still performs a best-effort remediation using the Crawl-stage reset.
+The workflow uses convergence nodes: each remediation branch runs based on the `root_cause` artifact set by the enrichment node. If Edwin AI is unreachable, the enrichment node fails and the failure fallback triggers the default BGP reset (Crawl-stage behavior). All branches converge to the "Report to LogicMonitor" node, which acknowledges the alert in LogicMonitor with the remediation result.
 
 ### Use Case: BGP Flapping -- Multiple Root Causes
 
@@ -498,9 +504,10 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 |-----------|---------|
 | EDA source | `ansible.eda.webhook` (same as Crawl) |
 | Rulebook | Adds `bgp_flapping` -> workflow rule |
-| Workflow Template | "BGP Smart Remediation" (5-6 nodes) |
+| Workflow Template | "BGP Smart Remediation" (6 nodes) |
 | Enrichment playbook | `playbooks/enrich_with_edwin_ai.yml` (uses `logicmonitor.edwin_ai.query_api`) |
 | Remediation playbooks | `playbooks/bounce_interface.yml`, `playbooks/restart_routing.yml`, `playbooks/rollback_config.yml` |
+| Reporting playbook | `playbooks/report_to_logicmonitor.yml` (acknowledges alert in LM) |
 | Collections | `arista.eos`, `logicmonitor.integration`, `logicmonitor.edwin_ai` |
 
 ---
@@ -540,7 +547,7 @@ LM sends alert that doesn't match any explicit rulebook rule
 
 2. **Configure toolsets.** Enable at minimum the `job_management` and `inventory_management` toolsets. These allow Edwin AI to discover job templates, query inventory hosts, check job history, and launch automation -- all within the boundaries of the authenticated user's RBAC permissions.
 
-3. **Create the escalation job template.** The "Escalate to Edwin AI" template (`playbooks/escalate_to_edwin_ai.yml`) receives the raw alert payload from the catch-all rule and sends it to Edwin AI for investigation.
+3. **Create the escalation job template.** The "Escalate to Edwin AI" template (`playbooks/escalate_to_edwin_ai.yml`) receives the raw alert payload from the catch-all rule and sends it to Edwin AI for investigation. Attach the "Edwin AI API" credential created during the Walk stage setup (the bootstrap creates the credential type but not the credential itself).
 
 | Field | Value |
 |-------|-------|
