@@ -9,6 +9,12 @@
 - name: LogicMonitor AIOps - Network Remediation
   hosts: all
   sources:
+    # AAP Event Streams (AAP 2.5+): When creating a rulebook activation, map
+    # the "LogicMonitor Alerts" Event Stream to this source. AAP replaces the
+    # source plugin with its internal pg_listener at activation time — the
+    # webhook type below is irrelevant in production.
+    # For standalone development/testing without Event Streams, POST directly
+    # to http://<eda-host>:5000/logicmonitor.
     - ansible.eda.webhook:
         host: 0.0.0.0
         port: 5000

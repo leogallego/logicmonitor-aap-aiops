@@ -1,24 +1,43 @@
 #!/usr/bin/env bash
 # Validation: Crawl stage — BGP peer down alert triggers reset
-# Prerequisites: EDA webhook listening on port 5000, AAP job template "Reset BGP Session" exists
+#
+# Usage:
+#   Event Stream (production):  EDA_WEBHOOK_URL=https://<eda>/api/eda/v1/external_event_stream/<uuid>/post/  EDA_HMAC_SECRET=<secret>  bash validation/test_crawl.sh
+#   Direct webhook (dev):       EDA_WEBHOOK_URL=http://localhost:5000/logicmonitor  bash validation/test_crawl.sh
+#
+# Prerequisites: EDA rulebook activation running, AAP job template "Reset BGP Session" exists
 
 set -euo pipefail
 
 EDA_URL="${EDA_WEBHOOK_URL:-http://localhost:5000/logicmonitor}"
+EDA_HMAC_SECRET="${EDA_HMAC_SECRET:-}"
+
+PAYLOAD='{
+  "type": "bgp_peer_down",
+  "severity": "critical",
+  "host": "router2",
+  "id": "TEST-CRAWL-001",
+  "message": "BGP neighbor 10.1.12.1 state changed to Idle"
+}'
 
 echo "=== Crawl Stage Validation ==="
-echo "Sending BGP peer down alert to EDA webhook..."
+echo "Sending BGP peer down alert to EDA..."
+echo "  URL: ${EDA_URL}"
+
+HMAC_HEADER=()
+if [[ -n "$EDA_HMAC_SECRET" ]]; then
+  SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$EDA_HMAC_SECRET" -binary | xxd -p -c 256)
+  HMAC_HEADER=(-H "X-Hub-Signature-256: sha256=${SIGNATURE}")
+  echo "  HMAC: enabled"
+else
+  echo "  HMAC: disabled (set EDA_HMAC_SECRET to enable)"
+fi
 
 curl -s -w "\nHTTP Status: %{http_code}\n" \
   -X POST "$EDA_URL" \
   -H "Content-Type: application/json" \
-  -d '{
-    "type": "bgp_peer_down",
-    "severity": "critical",
-    "host": "router2",
-    "id": "TEST-CRAWL-001",
-    "message": "BGP neighbor 10.1.12.1 state changed to Idle"
-  }'
+  "${HMAC_HEADER[@]}" \
+  -d "$PAYLOAD"
 
 echo ""
 echo "Check AAP Controller for 'Reset BGP Session' job execution."
