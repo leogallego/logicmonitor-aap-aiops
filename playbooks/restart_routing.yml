@@ -4,18 +4,41 @@
   gather_facts: false
 
   tasks:
-    - name: Capture BGP state before restart
+    - name: Capture CPU and process state
+      arista.eos.eos_command:
+        commands:
+          - show processes top once
+      register: __cpu_state
+      changed_when: false
+
+    - name: Display CPU state before remediation
+      ansible.builtin.debug:
+        msg: "{{ __cpu_state.stdout_lines[0][:20] }}"
+        verbosity: 0
+
+    - name: Attempt soft BGP reset to reduce process load
+      arista.eos.eos_command:
+        commands:
+          - clear ip bgp * soft
+      changed_when: true
+
+    - name: Wait for soft reset to take effect
+      ansible.builtin.pause:
+        seconds: 10
+
+    - name: Check if BGP recovered after soft reset
       arista.eos.eos_command:
         commands:
           - show ip bgp summary
-      register: __bgp_before
+      register: __bgp_soft
       changed_when: false
 
-    - name: Restart the BGP process
+    - name: Force hard BGP process restart if soft reset insufficient
       arista.eos.eos_command:
         commands:
           - clear ip bgp *
       changed_when: true
+      when: "'Established' not in __bgp_soft.stdout[0]"
 
     - name: Wait for BGP peers to re-establish
       arista.eos.eos_command:
