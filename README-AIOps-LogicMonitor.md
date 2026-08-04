@@ -112,6 +112,7 @@ LogicMonitor and Edwin AI provide the intelligence. AAP provides the trust layer
 | `logicmonitor.edwin_ai` | Edwin AI query API for alert correlation and insights |
 | `arista.eos` | Network device automation (substitute your platform's collection as needed) |
 | `ansible.eda` | Event-Driven Ansible webhook source plugin, Event Stream management |
+| `ansible.controller` | AAP Controller object management (bootstrap automation) |
 
 ---
 
@@ -347,7 +348,7 @@ LM detects BGP flapping on network device
           |   -> Node 2a: "Bounce Interface"
           |
           +-- root_cause == "cpu_exhaustion"
-          |   -> Node 2b: "Restart Routing Process"
+          |   -> Node 2b: "Restart Routing"
           |
           +-- root_cause == "config_drift"
           |   -> Node 2c: "Rollback Configuration"
