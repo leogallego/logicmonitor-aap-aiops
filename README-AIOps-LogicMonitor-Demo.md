@@ -26,7 +26,7 @@ This is the hands-on companion to the [Solution Guide](README-AIOps-LogicMonitor
 | AAP 2.6 | Automation Controller + EDA Controller |
 | LogicMonitor | Active account with API access |
 | Edwin AI | Portal with API credentials (`access_id`, `access_key`) |
-| Ansible collections | `arista.eos`, `logicmonitor.integration`, `logicmonitor.edwin_ai`, `ansible.eda` |
+| Ansible collections | `arista.eos`, `logicmonitor.integration`, `logicmonitor.edwin_ai`, `ansible.eda`, `ansible.controller` |
 
 ---
 
@@ -136,7 +136,6 @@ This creates:
 | Organization | Network Ops | All |
 | Credential Type | LogicMonitor API | All |
 | Credential Type | Edwin AI API | Walk, Run |
-| Event Stream | LogicMonitor Alerts | All |
 | Job Template | Reset BGP Session | Crawl |
 | Job Template | Enrich with Edwin AI | Walk |
 | Job Template | Bounce Interface | Walk |
@@ -148,7 +147,7 @@ This creates:
 After the bootstrap completes, manually create:
 
 - **LM API credential** using the "LogicMonitor API" credential type with your company name and bearer token
-- **Edwin AI credential** using the "Edwin AI API" credential type with your portal, access ID, and access key
+- **Edwin AI credential** using the "Edwin AI API" credential type with your portal, access ID, and access key. After creating the credential, attach it to the **"Enrich with Edwin AI"** and **"Escalate to Edwin AI"** job templates (these templates need both the Workshop Credential and the Edwin AI credential)
 - **"BGP Smart Remediation" workflow template** with the node topology described in the [Solution Guide](README-AIOps-LogicMonitor.md#stage-2----walk-ai-enriched-remediation)
 
 ### 1.6 Create the EDA Event Stream
@@ -253,7 +252,8 @@ This sends a test BGP peer down alert directly to the EDA webhook:
 
 ```
 === Crawl Stage Validation ===
-Sending BGP peer down alert to EDA webhook...
+Sending BGP peer down alert to EDA...
+  URL: http://localhost:5000/logicmonitor
 
 HTTP Status: 200
 
@@ -271,7 +271,7 @@ After running the script, verify in the AAP Controller UI:
 If BGP did not auto-recover, bring the interface back up:
 
 ```bash
-ansible-playbook playbooks/simulate_bgp_down.yml -i inventory/hosts.yml -e '{"target_interface": "Ethernet1"}' --tags restore
+ansible-playbook playbooks/simulate_bgp_down.yml -i inventory/hosts.yml --tags restore
 ```
 
 Or SSH into `router2` and run:
@@ -363,7 +363,8 @@ Expected output:
 
 ```
 === Walk Stage Validation ===
-Sending BGP flapping alert to EDA webhook...
+Sending BGP flapping alert to EDA...
+  URL: http://localhost:5000/logicmonitor
 
 HTTP Status: 200
 
@@ -425,7 +426,8 @@ Expected output:
 
 ```
 === Run Stage Validation ===
-Sending unknown alert type to EDA webhook...
+Sending unknown alert type to EDA...
+  URL: http://localhost:5000/logicmonitor
 
 HTTP Status: 200
 

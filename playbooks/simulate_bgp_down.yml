@@ -13,11 +13,16 @@
           - show ip bgp summary
       register: __bgp_before
       changed_when: false
+      tags:
+        - disrupt
+        - restore
 
     - name: Display BGP state before disruption
       ansible.builtin.debug:
         var: __bgp_before.stdout_lines[0]
         verbosity: 1
+      tags:
+        - disrupt
 
     - name: Shut down interface to break BGP peering
       arista.eos.eos_interfaces:
@@ -25,6 +30,8 @@
           - name: "{{ target_interface }}"
             enabled: false
         state: merged
+      tags:
+        - disrupt
 
     - name: Confirm interface is down
       arista.eos.eos_command:
@@ -32,6 +39,8 @@
           - "show interfaces {{ target_interface }} status"
       register: __iface_status
       changed_when: false
+      tags:
+        - disrupt
 
     - name: Display post-disruption interface status
       ansible.builtin.debug:
@@ -39,3 +48,35 @@
           Interface {{ target_interface }} shut down on {{ inventory_hostname }}.
           BGP peering should drop within hold-timer window.
         verbosity: 0
+      tags:
+        - disrupt
+
+    - name: Bring interface back up
+      arista.eos.eos_interfaces:
+        config:
+          - name: "{{ target_interface }}"
+            enabled: true
+        state: merged
+      tags:
+        - restore
+
+    - name: Wait for BGP peers to re-establish
+      arista.eos.eos_command:
+        commands:
+          - show ip bgp summary
+      register: __bgp_after
+      changed_when: false
+      until: "'Established' in __bgp_after.stdout[0]"
+      retries: 6
+      delay: 5
+      tags:
+        - restore
+
+    - name: Confirm BGP restored
+      ansible.builtin.debug:
+        msg: >-
+          Interface {{ target_interface }} restored on {{ inventory_hostname }}.
+          BGP peers re-established.
+        verbosity: 0
+      tags:
+        - restore
