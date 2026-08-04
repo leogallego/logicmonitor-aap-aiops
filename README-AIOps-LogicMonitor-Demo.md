@@ -26,7 +26,7 @@ This is the hands-on companion to the [Solution Guide](README-AIOps-LogicMonitor
 | AAP 2.6 | Automation Controller + EDA Controller |
 | LogicMonitor | Active account with API access |
 | Edwin AI | Portal with API credentials (`access_id`, `access_key`) |
-| Ansible collections | `arista.eos`, `logicmonitor.integration`, `logicmonitor.edwin_ai`, `ansible.eda` |
+| Ansible collections | `arista.eos`, `logicmonitor.integration`, `logicmonitor.edwin_ai`, `ansible.eda`, `ansible.controller` |
 
 ---
 
@@ -136,7 +136,6 @@ This creates:
 | Organization | Network Ops | All |
 | Credential Type | LogicMonitor API | All |
 | Credential Type | Edwin AI API | Walk, Run |
-| Event Stream | LogicMonitor Alerts | All |
 | Job Template | Reset BGP Session | Crawl |
 | Job Template | Enrich with Edwin AI | Walk |
 | Job Template | Bounce Interface | Walk |
