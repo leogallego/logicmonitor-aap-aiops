@@ -17,7 +17,7 @@
     lm_aiops_org: "Network Ops"
     lm_aiops_project_name: "LM AIOps Solution Guide"
     lm_aiops_project_url: ""
-    lm_aiops_inventory: "BGP Lab Inventory"
+    lm_aiops_inventory: "Network Inventory"
     lm_aiops_credential: "Workshop Credential"
     lm_aiops_ee: "Default execution environment"
 
@@ -93,17 +93,10 @@
         validate_certs: "{{ controller_verify_ssl }}"
 
     # --- EDA Event Stream ---
-    - name: Create LogicMonitor Alerts event stream
-      ansible.eda.event_stream:
-        name: "LogicMonitor Alerts"
-        credential_name: "LM Webhook HMAC"
-        organization_name: "{{ lm_aiops_org }}"
-        forward_events: true
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: "{{ controller_verify_ssl }}"
+    # The "LogicMonitor Alerts" Event Stream must be created manually in the
+    # EDA Controller UI with an HMAC credential. See the Demo Guide (step 1.6)
+    # for instructions. The bootstrap cannot create it because the HMAC secret
+    # must be generated in the UI and shared with LogicMonitor.
 
     # --- CRAWL: Job Template ---
     - name: "Job template — Reset BGP Session (Crawl)"
