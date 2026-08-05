@@ -7,6 +7,10 @@
     target_interface: "{{ interface | default('Ethernet1') }}"
 
   tasks:
+    - name: Skip if root cause does not match
+      ansible.builtin.meta: end_host
+      when: root_cause | default('interface_errors') != 'interface_errors'
+
     - name: Shut down interface
       arista.eos.eos_interfaces:
         config:

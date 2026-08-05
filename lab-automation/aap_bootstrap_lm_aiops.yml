@@ -1,7 +1,15 @@
 ---
 # Bootstrap AAP Controller with LM AIOps demo objects.
-# Assumes base workshop bootstrap has run (default org, network inventory, EE exist).
-# Pattern adapted from zt-network-automation-workshop/lab-automation/playbooks/tasks/controller_workshop_objects.yml
+#
+# Basic run (credential types + job templates):
+#   ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
+#     -e @lab-automation/credentials.yml
+#
+# Full run (also creates credentials, Event Stream, workflow template):
+#   ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
+#     -e @lab-automation/credentials.yml -e full_bootstrap=true
+#
+# See lab-automation/credentials.yml.example for all required variables.
 
 - name: Bootstrap AAP Controller for LM AIOps demo
   hosts: localhost
@@ -9,10 +17,11 @@
   gather_facts: false
 
   vars:
-    controller_host: "{{ lookup('ansible.builtin.env', 'CONTROLLER_HOST') | default('https://localhost', true) }}"
-    controller_username: "{{ lookup('ansible.builtin.env', 'CONTROLLER_USERNAME') | default('admin', true) }}"
-    controller_password: "{{ lookup('ansible.builtin.env', 'CONTROLLER_PASSWORD') | default('ansible123!', true) }}"
+    controller_host: "https://localhost"
+    controller_username: "admin"
+    controller_password: ""
     controller_verify_ssl: false
+    full_bootstrap: false
 
     lm_aiops_org: "Network Ops"
     lm_aiops_project_name: "LM AIOps Solution Guide"
@@ -22,6 +31,38 @@
     lm_aiops_ee: "Default execution environment"
 
   tasks:
+    # =================================================================
+    # VALIDATION
+    # =================================================================
+
+    - name: Validate Controller credentials are provided
+      ansible.builtin.assert:
+        that:
+          - controller_host != "https://localhost"
+          - controller_password | length > 0
+        fail_msg: >-
+          Controller credentials required. Copy credentials.yml.example
+          to credentials.yml, fill in your values, and pass with
+          -e @lab-automation/credentials.yml
+
+    - name: Validate full bootstrap credentials
+      ansible.builtin.assert:
+        that:
+          - lm_company is defined and lm_company != "CHANGEME"
+          - lm_bearer_token is defined and lm_bearer_token != "CHANGEME"
+          - edwin_portal is defined and edwin_portal != "CHANGEME"
+          - edwin_access_id is defined and edwin_access_id != "CHANGEME"
+          - edwin_access_key is defined and edwin_access_key != "CHANGEME"
+          - eda_hmac_secret is defined and eda_hmac_secret != "CHANGEME"
+        fail_msg: >-
+          Full bootstrap requires LM, Edwin AI, and EDA credentials.
+          Fill in all values in credentials.yml.
+      when: full_bootstrap | bool
+
+    # =================================================================
+    # CORE BOOTSTRAP — always runs
+    # =================================================================
+
     # --- Organization ---
     - name: Ensure Network Ops organization exists
       ansible.controller.organization:
@@ -33,7 +74,7 @@
         controller_password: "{{ controller_password }}"
         validate_certs: "{{ controller_verify_ssl }}"
 
-    # --- LM API Credential (custom credential type) ---
+    # --- Credential Types ---
     - name: Create LM API credential type
       ansible.controller.credential_type:
         name: "LogicMonitor API"
@@ -60,7 +101,6 @@
         controller_password: "{{ controller_password }}"
         validate_certs: "{{ controller_verify_ssl }}"
 
-    # --- Edwin AI Credential (custom credential type) ---
     - name: Create Edwin AI credential type
       ansible.controller.credential_type:
         name: "Edwin AI API"
@@ -92,13 +132,7 @@
         controller_password: "{{ controller_password }}"
         validate_certs: "{{ controller_verify_ssl }}"
 
-    # --- EDA Event Stream ---
-    # The "LogicMonitor Alerts" Event Stream must be created manually in the
-    # EDA Controller UI with an HMAC credential. See the Demo Guide (step 1.6)
-    # for instructions. The bootstrap cannot create it because the HMAC secret
-    # must be generated in the UI and shared with LogicMonitor.
-
-    # --- CRAWL: Job Template ---
+    # --- Job Templates ---
     - name: "Job template — Reset BGP Session (Crawl)"
       ansible.controller.job_template:
         name: "Reset BGP Session"
@@ -116,8 +150,6 @@
         controller_password: "{{ controller_password }}"
         validate_certs: "{{ controller_verify_ssl }}"
 
-    # --- WALK: Workflow Template ---
-    # Individual job templates for workflow nodes
     - name: "Job template — Enrich with Edwin AI (Walk)"
       ansible.controller.job_template:
         name: "Enrich with Edwin AI"
@@ -186,7 +218,6 @@
         controller_password: "{{ controller_password }}"
         validate_certs: "{{ controller_verify_ssl }}"
 
-    # --- RUN: Job Template ---
     - name: "Job template — Escalate to Edwin AI (Run)"
       ansible.controller.job_template:
         name: "Escalate to Edwin AI"
@@ -204,7 +235,6 @@
         controller_password: "{{ controller_password }}"
         validate_certs: "{{ controller_verify_ssl }}"
 
-    # --- Shared: Report to LM ---
     - name: "Job template — Report to LogicMonitor"
       ansible.controller.job_template:
         name: "Report to LogicMonitor"
@@ -221,3 +251,231 @@
         controller_username: "{{ controller_username }}"
         controller_password: "{{ controller_password }}"
         validate_certs: "{{ controller_verify_ssl }}"
+
+    # =================================================================
+    # FULL BOOTSTRAP — only runs with -e full_bootstrap=true
+    # =================================================================
+
+    # --- Credential instances ---
+    - name: "Create LM API credential"
+      ansible.controller.credential:
+        name: "LogicMonitor API"
+        organization: "{{ lm_aiops_org }}"
+        credential_type: "LogicMonitor API"
+        inputs:
+          lm_company: "{{ lm_company }}"
+          lm_bearer_token: "{{ lm_bearer_token }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    - name: "Create Edwin AI credential"
+      ansible.controller.credential:
+        name: "Edwin AI API"
+        organization: "{{ lm_aiops_org }}"
+        credential_type: "Edwin AI API"
+        inputs:
+          edwin_portal: "{{ edwin_portal }}"
+          edwin_access_id: "{{ edwin_access_id }}"
+          edwin_access_key: "{{ edwin_access_key }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    # --- Attach Edwin AI credential to templates that need it ---
+    - name: "Attach Edwin AI credential to Enrich with Edwin AI"
+      ansible.controller.job_template:
+        name: "Enrich with Edwin AI"
+        organization: "{{ lm_aiops_org }}"
+        credentials:
+          - "{{ lm_aiops_credential }}"
+          - "Edwin AI API"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    - name: "Attach Edwin AI credential to Escalate to Edwin AI"
+      ansible.controller.job_template:
+        name: "Escalate to Edwin AI"
+        organization: "{{ lm_aiops_org }}"
+        credentials:
+          - "{{ lm_aiops_credential }}"
+          - "Edwin AI API"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    # --- Attach LM API credential to Report to LogicMonitor ---
+    - name: "Attach LM API credential to Report to LogicMonitor"
+      ansible.controller.job_template:
+        name: "Report to LogicMonitor"
+        organization: "{{ lm_aiops_org }}"
+        credentials:
+          - "{{ lm_aiops_credential }}"
+          - "LogicMonitor API"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    # --- EDA Event Stream ---
+    - name: "Create EDA HMAC credential for webhook signing"
+      ansible.eda.credential:
+        name: "LM Webhook HMAC"
+        credential_type_name: "HMAC"
+        organization_name: "{{ lm_aiops_org }}"
+        inputs:
+          secret: "{{ eda_hmac_secret }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    - name: "Create LogicMonitor Alerts Event Stream"
+      ansible.eda.event_stream:
+        name: "LogicMonitor Alerts"
+        credential_name: "LM Webhook HMAC"
+        organization_name: "{{ lm_aiops_org }}"
+        forward_events: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      register: __event_stream
+      when: full_bootstrap | bool
+
+    - name: "Display Event Stream URL for LogicMonitor webhook config"
+      ansible.builtin.debug:
+        msg: >-
+          Event Stream created. Configure LogicMonitor webhook with:
+          URL: {{ __event_stream.url | default('(check EDA Controller UI)') }}
+          HMAC Secret: (the eda_hmac_secret value from your credentials.yml)
+        verbosity: 0
+      when: full_bootstrap | bool
+
+    # --- Walk: BGP Smart Remediation Workflow ---
+    # All three remediation nodes are success children of the enrichment
+    # node. Each remediation playbook checks the root_cause artifact and
+    # skips itself if the root cause does not match its specialization.
+    - name: "Create BGP Smart Remediation workflow template"
+      ansible.controller.workflow_job_template:
+        name: "BGP Smart Remediation"
+        organization: "{{ lm_aiops_org }}"
+        inventory: "{{ lm_aiops_inventory }}"
+        ask_variables_on_launch: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    - name: "Workflow node — Enrich with Edwin AI (root)"
+      ansible.controller.workflow_job_template_node:
+        workflow_job_template: "BGP Smart Remediation"
+        organization: "{{ lm_aiops_org }}"
+        identifier: "enrich"
+        unified_job_template: "Enrich with Edwin AI"
+        success_nodes:
+          - identifier: "bounce"
+          - identifier: "restart"
+          - identifier: "rollback"
+        failure_nodes:
+          - identifier: "default_reset"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    - name: "Workflow node — Bounce Interface"
+      ansible.controller.workflow_job_template_node:
+        workflow_job_template: "BGP Smart Remediation"
+        organization: "{{ lm_aiops_org }}"
+        identifier: "bounce"
+        unified_job_template: "Bounce Interface"
+        success_nodes:
+          - identifier: "report"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    - name: "Workflow node — Restart Routing"
+      ansible.controller.workflow_job_template_node:
+        workflow_job_template: "BGP Smart Remediation"
+        organization: "{{ lm_aiops_org }}"
+        identifier: "restart"
+        unified_job_template: "Restart Routing"
+        success_nodes:
+          - identifier: "report"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    - name: "Workflow node — Rollback Config"
+      ansible.controller.workflow_job_template_node:
+        workflow_job_template: "BGP Smart Remediation"
+        organization: "{{ lm_aiops_org }}"
+        identifier: "rollback"
+        unified_job_template: "Rollback Config"
+        success_nodes:
+          - identifier: "report"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    - name: "Workflow node — Default BGP Reset (failure fallback)"
+      ansible.controller.workflow_job_template_node:
+        workflow_job_template: "BGP Smart Remediation"
+        organization: "{{ lm_aiops_org }}"
+        identifier: "default_reset"
+        unified_job_template: "Reset BGP Session"
+        success_nodes:
+          - identifier: "report"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    - name: "Workflow node — Report to LogicMonitor (convergence)"
+      ansible.controller.workflow_job_template_node:
+        workflow_job_template: "BGP Smart Remediation"
+        organization: "{{ lm_aiops_org }}"
+        identifier: "report"
+        unified_job_template: "Report to LogicMonitor"
+        all_parents_must_converge: false
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
