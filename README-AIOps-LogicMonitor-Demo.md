@@ -90,7 +90,7 @@ router1> enable
 router1# show ip bgp summary
 ```
 
-All neighbors should show `Established` state. Repeat for `router2` and `router3` to confirm full-mesh peering.
+All neighbors should be up: State `Estab`/`Established`, or a prefix count in `State/PfxRcd` with no Idle/Active. Repeat for `router2` and `router3` to confirm full-mesh peering.
 
 Alternatively, use the validation playbook:
 
@@ -119,21 +119,58 @@ If AAP is running on a different host from ContainerLab, update `ansible_host` t
 
 ### 1.5 Run the AAP Bootstrap
 
-The bootstrap playbook creates all AAP Controller objects needed for the demo:
+Controller connection comes from extra vars first, then environment. The playbook does **not** ship a default password.
+
+**Option A — environment (credential types + job templates only):**
 
 ```bash
 export CONTROLLER_HOST="https://<your-aap-controller>"
 export CONTROLLER_USERNAME="admin"
 export CONTROLLER_PASSWORD="<your-password>"
+export LM_AIOPS_PROJECT_URL="https://github.com/<you>/logicmonitor-aap-aiops.git"
+export WORKSHOP_SSH_PASSWORD="<lab-eos-ssh-password>"
+# optional: export CONTROLLER_VERIFY_SSL=false   # lab Controllers with self-signed certs
+# TLS verification defaults to true
 
 ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml
 ```
 
-This creates:
+**Option B — vars file (same objects, values in one place):**
+
+```bash
+cp lab-automation/credentials.yml.example lab-automation/credentials.yml
+# edit credentials.yml; it is gitignored — do not commit it
+# required: controller_*, lm_aiops_project_url, workshop_ssh_password
+
+ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
+  -e @lab-automation/credentials.yml
+```
+
+Basic bootstrap now also creates the Controller project, Network Inventory
+(lab hosts), Workshop Credential, and attaches `lm_aiops_ee` (default:
+Default execution environment). That EE **must already exist** and must
+include `arista.eos`, `ansible.netcommon`, and `logicmonitor.edwin_ai`.
+`collections/requirements.yml` installs those on the control node only.
+Override with `LM_AIOPS_EE` or `lm_aiops_ee`.
+
+**Full bootstrap** also creates LM/Edwin credentials, the Event Stream, EDA
+project, rulebook activation, and the Walk workflow. Set
+`eda_controller_token_name` to an EDA token that can launch job templates.
+
+```bash
+ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
+  -e @lab-automation/credentials.yml \
+  -e full_bootstrap=true
+```
+
+Basic bootstrap creates:
 
 | Object | Name | Stage |
 |--------|------|-------|
 | Organization | Network Ops | All |
+| Project | LM AIOps Solution Guide | All |
+| Inventory | Network Inventory | All |
+| Credential | Workshop Credential | All |
 | Credential Type | LogicMonitor API | All |
 | Credential Type | Edwin AI API | Walk, Run |
 | Job Template | Reset BGP Session | Crawl |
@@ -144,13 +181,15 @@ This creates:
 | Job Template | Escalate to Edwin AI | Run |
 | Job Template | Report to LogicMonitor | All |
 
-After the bootstrap completes, manually create:
+After a **basic** bootstrap, create these in the UI (skip if you used `full_bootstrap=true`):
 
 - **LM API credential** using the "LogicMonitor API" credential type with your company name and bearer token
 - **Edwin AI credential** using the "Edwin AI API" credential type with your portal, access ID, and access key. After creating the credential, attach it to the **"Enrich with Edwin AI"** and **"Escalate to Edwin AI"** job templates (these templates need both the Workshop Credential and the Edwin AI credential)
 - **"BGP Smart Remediation" workflow template** with the node topology described in the [Solution Guide](README-AIOps-LogicMonitor.md#stage-2----walk-ai-enriched-remediation)
 
 ### 1.6 Create the EDA Event Stream
+
+Skip this section if you already ran with `full_bootstrap=true` (the playbook creates a Token Event Stream named "LogicMonitor Alerts" unless you set `eda_event_stream_auth=hmac`).
 
 In the EDA Controller UI:
 
@@ -160,23 +199,36 @@ In the EDA Controller UI:
 | Field | Value |
 |-------|-------|
 | Name | LogicMonitor Alerts |
-| Credential type | HMAC |
+| Credential type | Token (live LM Custom HTTP) or HMAC (synthetic `validation/test_*.sh` posts) |
 | Organization | Network Ops |
 
-3. Save and copy the **Event Stream URL** and **HMAC secret** -- you will need both for the LogicMonitor webhook configuration
+3. Save and copy the **Event Stream URL**. For Token streams, copy the token/header value to add as a static header on the LM integration. For HMAC streams, copy the secret for `EDA_HMAC_SECRET` on synthetic tests -- Custom HTTP Delivery cannot HMAC-sign the body.
 
-The Event Stream provides a platform-managed endpoint with HMAC authentication. AAP handles TLS, event routing, and credential validation.
+The Event Stream provides a platform-managed endpoint. AAP handles TLS, event routing, and credential validation. Live LM payloads must still match the `type` / `host` / `id` contract in the next step.
 
 ### 1.7 Configure LogicMonitor Webhook
 
-In the LogicMonitor portal, create an integration that sends HTTP POST alerts to the Event Stream:
+LogicMonitor's native `##ALERTTYPE##` token is `alert` / `eventAlert` / similar -- it will **not** match the rulebook. Use the Custom HTTP templates in `lab-automation/lm-webhook/` so the JSON body uses the demo schema (`type`, `host`, `id`).
+
+Create **three** Custom HTTP Delivery integrations (Settings → Integrations → Add):
+
+| Stage | Template file | Hardcoded `type` | Assign to |
+|-------|---------------|------------------|-----------|
+| Crawl | `lab-automation/lm-webhook/crawl-bgp-peer-down.json` | `bgp_peer_down` | BGP peer down alert rule |
+| Walk | `lab-automation/lm-webhook/walk-bgp-flapping.json` | `bgp_flapping` | BGP flapping / instability rule |
+| Run | `lab-automation/lm-webhook/run-unmatched.json` | `network_anomaly_unknown` | A test or unmatched alert rule |
+
+For each integration:
 
 - **URL:** The Event Stream URL from step 1.6 (not `http://<eda-controller>:5000/logicmonitor`)
 - **Method:** POST
 - **Content-Type:** `application/json`
-- **HMAC Secret:** The secret from step 1.6 (for payload signing)
+- **Alert Data:** Raw JSON -- paste the template file
+- Name LM devices `router1` / `router2` / `router3` so `##HOST##` matches `inventory/hosts.yml`
 
-> **Standalone testing:** For local development without Event Streams, POST directly to `http://<eda-controller>:5000/logicmonitor`. The `ansible.eda.webhook` source in the rulebook listens on this endpoint independently.
+Custom HTTP Delivery does **not** compute `X-Hub-Signature-256`. For live LM traffic, use an Event Stream credential type that a static header can satisfy (Token), or a signing proxy. HMAC in `validation/test_*.sh` applies only when `EDA_HMAC_SECRET` is set on synthetic posts. Full payload notes: `lab-automation/lm-webhook/README.md`.
+
+> **Standalone testing:** For local development without Event Streams, POST the same JSON schema directly to `http://<eda-controller>:5000/logicmonitor`. The `ansible.eda.webhook` source in the rulebook listens on this endpoint independently. Set `EDA_WEBHOOK_URL` when running `validation/test_*.sh` against an Event Stream URL.
 
 ### 1.8 Deploy the EDA Rulebook Activation
 
@@ -229,7 +281,7 @@ Shut down an interface on `router2` to break BGP peering with `router1`:
 ansible-playbook playbooks/simulate_bgp_down.yml -i inventory/hosts.yml
 ```
 
-This runs against `router2` by default, shutting down `Ethernet1` (the link to `router1`). The BGP session between `router2` (AS 64502) and `router1` (AS 64501) will drop.
+This runs against `router2` by default and **leaves** `Ethernet1` shut (the link to `router1`). Restore tasks are tagged `never` / `restore`, so they do not run unless you pass `--tags restore`. The BGP session between `router2` (AS 64502) and `router1` (AS 64501) stays down until Crawl remediation (or a manual restore).
 
 ### 2.3 Observe the End-to-End Flow
 
@@ -238,9 +290,10 @@ This runs against `router2` by default, shutting down `Ethernet1` (the link to `
 3. **EDA rulebook** matches `event.payload.type == "bgp_peer_down"` (Crawl rule)
 4. **EDA** triggers the "Reset BGP Session" job template in AAP Controller
 5. **AAP** runs `playbooks/reset_bgp_session.yml` targeting `router2`
-6. The playbook resets BGP sessions and validates recovery
+6. The playbook enables `Ethernet1` (the lab-induced shut), clears BGP sessions, and waits until `show ip bgp summary` has no Idle/Active/Connect peers
 7. BGP re-establishes between `router2` and `router1`
-8. AAP reports the remediation result back to LogicMonitor (alert acknowledged)
+8. AAP reports the remediation result back to LogicMonitor (the Crawl job
+   acknowledges the alert when `alert_id` and LM credentials are present)
 
 ### 2.4 Run the Validation Script
 
@@ -248,7 +301,7 @@ This runs against `router2` by default, shutting down `Ethernet1` (the link to `
 bash validation/test_crawl.sh
 ```
 
-This sends a test BGP peer down alert directly to the EDA webhook:
+This POSTs the same JSON schema as `lab-automation/lm-webhook/crawl-bgp-peer-down.json` (synthetic `type` / `host` / `id`). It does not wait for a live LogicMonitor alert. Override the target with `EDA_WEBHOOK_URL` (and `EDA_HMAC_SECRET` if the Event Stream requires HMAC):
 
 ```
 === Crawl Stage Validation ===
@@ -268,7 +321,7 @@ After running the script, verify in the AAP Controller UI:
 
 ### 2.5 Restore BGP (if needed)
 
-If BGP did not auto-recover, bring the interface back up:
+If the Crawl job did not run (or failed before enabling the link), bring the interface back up:
 
 ```bash
 ansible-playbook playbooks/simulate_bgp_down.yml -i inventory/hosts.yml --tags restore
@@ -335,7 +388,7 @@ Introduce a wrong AS number in the BGP configuration:
 ansible-playbook playbooks/simulate_config_drift.yml -i inventory/hosts.yml
 ```
 
-This changes `router2`'s BGP neighbor AS for `10.1.12.1` (router1) from `64501` to `99999`, causing a peering mismatch and BGP failure.
+This first copies running-config to `flash:lm-aiops-known-good` on `router2` (no BGP peer may be Idle/Active), then changes the neighbor AS for `10.1.12.1` (router1) from `64501` to `99999`. The snapshot is on the device so the AAP rollback job can see it. Do not run simulate twice without rollback — the playbook refuses to snapshot a broken mesh. Do not `write memory` after simulate.
 
 #### 3B.2 Observe the End-to-End Flow
 
@@ -344,7 +397,7 @@ This changes `router2`'s BGP neighbor AS for `10.1.12.1` (router1) from `64501` 
 3. **EDA rulebook** matches the Walk rule, triggers "BGP Smart Remediation" workflow
 4. **Workflow Node 1:** "Enrich with Edwin AI" queries Edwin AI
 5. Edwin AI returns: BGP failure + config change event 5 minutes ago -- root cause: `config_drift`
-6. **Workflow Node 2c:** "Rollback Config" runs, restoring the last known good configuration
+6. **Workflow Node 2c:** "Rollback Config" runs `configure replace flash:lm-aiops-known-good` (the simulate snapshot). If that file is missing, it falls back to device `startup-config` (ContainerLab deploy).
 7. BGP re-establishes with the correct AS numbers
 8. Results reported back to LogicMonitor
 
@@ -403,8 +456,8 @@ This sends a `network_anomaly_unknown` alert to the EDA webhook with:
 2. No specific Crawl or Walk rule matches `network_anomaly_unknown`
 3. **Catch-all rule** fires: "Unmatched alert - escalate to Edwin AI"
 4. **EDA** triggers the "Escalate to Edwin AI" job template
-5. The playbook sends the raw alert context to Edwin AI
-6. **Edwin AI** connects to the AAP MCP Server and investigates:
+5. The playbook queries Edwin AI (`query_api` for alerts and insights) and records counts on the job
+6. **Edwin AI** (when pointed at AAP MCP) investigates:
    - Discovers available job templates and workflows
    - Queries inventory for affected device details
    - Checks recent job history
@@ -432,7 +485,7 @@ Sending unknown alert type to EDA...
 HTTP Status: 200
 
 Check AAP Controller for 'Escalate to Edwin AI' job execution.
-Expected: Job launches, sends context to Edwin AI for MCP-based investigation.
+Expected: Job launches, queries Edwin AI, and records correlated alert/insight counts. MCP is Edwin-initiated.
 ```
 
 ---
@@ -465,8 +518,9 @@ This removes all three router containers and the lab network links.
 
 | Issue | Cause | Resolution |
 |-------|-------|------------|
-| Bootstrap playbook fails | Wrong Controller URL or credentials | Verify `CONTROLLER_HOST`, `CONTROLLER_USERNAME`, `CONTROLLER_PASSWORD` environment variables |
-| EDA webhook not receiving alerts | Event Stream misconfigured, HMAC mismatch, or activation not started | Verify Event Stream is active and HMAC credential matches LM webhook config. For standalone testing, POST directly to port 5000 |
+| Bootstrap playbook fails | Wrong Controller URL or credentials, or password unset | Export `CONTROLLER_HOST` / `CONTROLLER_USERNAME` / `CONTROLLER_PASSWORD`, or pass `-e @lab-automation/credentials.yml`. There is no default password. |
+| EDA webhook not receiving alerts | Event Stream misconfigured, HMAC mismatch, or activation not started | Verify Event Stream URL (or port 5000 for standalone). Custom HTTP cannot HMAC-sign -- use Token Event Stream or `validation/test_*.sh` for HMAC tests |
+| Live LM alert hits catch-all / no JT | Native `##ALERTTYPE##` used instead of hardcoded `type` | Paste `lab-automation/lm-webhook/*.json` as Raw JSON. Confirm LM device name matches inventory hostname |
 | Wrong job template launches | Rulebook rule ordering | Rules are evaluated top-to-bottom. Verify specific rules (Crawl, Walk) appear before the catch-all (Run) in `rulebooks/logicmonitor_network.yml` |
 | Job template fails with credential error | LM or Edwin AI credentials not created | Create credentials manually using the custom credential types created by the bootstrap |
 | Workflow does not branch correctly | Root cause artifact not set or unexpected value | Check the "Enrich with Edwin AI" job output for `set_stats` artifacts. Review the enrichment playbook logic |

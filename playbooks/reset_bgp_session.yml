@@ -1,7 +1,12 @@
 ---
+- ansible.builtin.import_playbook: validate_lab_target.yml
+
 - name: Reset BGP session on affected device
   hosts: "{{ affected_host }}"
   gather_facts: false
+
+  vars:
+    target_interface: "{{ interface | default('Ethernet1') }}"
 
   tasks:
     - name: Gather current BGP summary
@@ -10,6 +15,15 @@
           - show ip bgp summary
       register: __bgp_before
       changed_when: false
+
+    # Lab Crawl fault is an interface shutdown (simulate_bgp_down.yml).
+    # clear ip bgp * cannot unshut a link; enable first (idempotent if already up).
+    - name: Ensure interface is enabled
+      arista.eos.eos_interfaces:
+        config:
+          - name: "{{ target_interface }}"
+            enabled: true
+        state: merged
 
     - name: Clear BGP sessions
       arista.eos.eos_command:
@@ -23,14 +37,19 @@
           - show ip bgp summary
       register: __bgp_after
       changed_when: false
-      until: "'Established' in __bgp_after.stdout[0]"
+      # Down sessions print Idle/Active/Connect. Do not match Estab — a
+      # remaining mesh peer would pass while the repaired session is down.
+      until: >-
+        (__bgp_after.stdout[0] | default('') | length > 0)
+        and ((__bgp_after.stdout[0] | regex_findall('Idle|Active|Connect|OpenSent|OpenConfirm')) | length == 0)
       retries: 6
       delay: 5
 
     - name: Assert BGP peers are established
       ansible.builtin.assert:
         that:
-          - "'Established' in __bgp_after.stdout[0]"
+          - __bgp_after.stdout[0] | length > 0
+          - (__bgp_after.stdout[0] | regex_findall('Idle|Active|Connect|OpenSent|OpenConfirm') | length) == 0
         fail_msg: "BGP peers did not re-establish after reset"
         success_msg: "BGP peers successfully re-established"
 
@@ -40,3 +59,40 @@
           remediation_result: "bgp_reset_success"
           remediation_host: "{{ affected_host }}"
           alert_id: "{{ alert_id }}"
+
+- name: Acknowledge LogicMonitor alert after Crawl reset
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Skip LogicMonitor ack when alert_id or LM credentials are missing
+      ansible.builtin.meta: end_play
+      when: >-
+        alert_id is not defined or alert_id | length == 0
+        or lm_company is not defined or lm_company | length == 0
+        or lm_bearer_token is not defined or lm_bearer_token | length == 0
+
+    - name: Reject malformed alert_id
+      ansible.builtin.assert:
+        that:
+          - alert_id is match('^[A-Za-z0-9._:-]{1,128}$')
+        fail_msg: "alert_id must be 1-128 characters in [A-Za-z0-9._:-]"
+
+    - name: Acknowledge alert in LogicMonitor
+      ansible.builtin.uri:
+        url: "https://{{ lm_company }}.logicmonitor.com/santaba/rest/alert/alerts/{{ alert_id }}/ack"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ lm_bearer_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          ackComment: >-
+            Automated remediation by AAP: bgp_reset_success
+            on host {{ affected_host }}.
+        status_code:
+          - 200
+          - 202
+      register: __ack_result
+      changed_when: __ack_result.status in [200, 202]

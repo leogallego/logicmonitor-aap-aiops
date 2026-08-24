@@ -17,6 +17,7 @@ clab-*/
 *.vault
 *vault*.yml
 !*vault*.yml.example
+lab-automation/credentials.yml
 
 internal/
 

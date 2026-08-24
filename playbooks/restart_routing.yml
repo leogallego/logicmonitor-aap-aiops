@@ -1,9 +1,15 @@
 ---
+- ansible.builtin.import_playbook: validate_lab_target.yml
+
 - name: Restart routing process to resolve CPU exhaustion
   hosts: "{{ affected_host }}"
   gather_facts: false
 
   tasks:
+    - name: Skip if root cause does not match
+      ansible.builtin.meta: end_host
+      when: (root_cause | default('')) != 'cpu_exhaustion'
+
     - name: Capture CPU and process state
       arista.eos.eos_command:
         commands:
@@ -38,7 +44,7 @@
         commands:
           - clear ip bgp *
       changed_when: true
-      when: "'Established' not in __bgp_soft.stdout[0]"
+      when: (__bgp_soft.stdout[0] | regex_findall('Idle|Active|Connect|OpenSent|OpenConfirm') | length) > 0
 
     - name: Wait for BGP peers to re-establish
       arista.eos.eos_command:
@@ -46,14 +52,19 @@
           - show ip bgp summary
       register: __bgp_after
       changed_when: false
-      until: "'Established' in __bgp_after.stdout[0]"
+      # Down sessions print Idle/Active/Connect. Do not match Estab — a
+      # remaining mesh peer would pass while the repaired session is down.
+      until: >-
+        (__bgp_after.stdout[0] | default('') | length > 0)
+        and ((__bgp_after.stdout[0] | regex_findall('Idle|Active|Connect|OpenSent|OpenConfirm')) | length == 0)
       retries: 9
       delay: 5
 
     - name: Assert BGP peers are established
       ansible.builtin.assert:
         that:
-          - "'Established' in __bgp_after.stdout[0]"
+          - __bgp_after.stdout[0] | length > 0
+          - (__bgp_after.stdout[0] | regex_findall('Idle|Active|Connect|OpenSent|OpenConfirm') | length) == 0
         fail_msg: "BGP peers did not re-establish after routing process restart"
         success_msg: "BGP peers re-established after routing process restart"
 

@@ -1,4 +1,6 @@
 ---
+- ansible.builtin.import_playbook: validate_lab_target.yml
+
 - name: Simulate interface errors causing BGP flapping
   hosts: "{{ target_host | default('router2') }}"
   gather_facts: false

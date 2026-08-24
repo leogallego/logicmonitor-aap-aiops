@@ -1,4 +1,6 @@
 ---
+- ansible.builtin.import_playbook: validate_lab_target.yml
+
 - name: Simulate BGP peer down by shutting interface
   hosts: "{{ target_host | default('router2') }}"
   gather_facts: false
@@ -51,6 +53,8 @@
       tags:
         - disrupt
 
+    # never: skipped unless --tags restore (untagged runs would also
+    # execute restore and self-heal the disruption).
     - name: Bring interface back up
       arista.eos.eos_interfaces:
         config:
@@ -58,6 +62,7 @@
             enabled: true
         state: merged
       tags:
+        - never
         - restore
 
     - name: Wait for BGP peers to re-establish
@@ -66,10 +71,15 @@
           - show ip bgp summary
       register: __bgp_after
       changed_when: false
-      until: "'Established' in __bgp_after.stdout[0]"
+      # Down sessions print Idle/Active/Connect. Do not match Estab — a
+      # remaining mesh peer would pass while the repaired session is down.
+      until: >-
+        (__bgp_after.stdout[0] | default('') | length > 0)
+        and ((__bgp_after.stdout[0] | regex_findall('Idle|Active|Connect|OpenSent|OpenConfirm')) | length == 0)
       retries: 6
       delay: 5
       tags:
+        - never
         - restore
 
     - name: Confirm BGP restored
@@ -79,4 +89,5 @@
           BGP peers re-established.
         verbosity: 0
       tags:
+        - never
         - restore

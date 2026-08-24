@@ -13,6 +13,9 @@
     # edwin_access_id: ""
     # edwin_access_key: ""
     edwin_lookback_window: 3600
+    # Lab Walk fault is BGP AS drift. Empty Edwin results map here so
+    # rollback runs. Set to unknown to fail enrich and use Reset BGP.
+    walk_unknown_root_cause: config_drift
 
   tasks:
     - name: Query Edwin AI for correlated alerts
@@ -51,8 +54,15 @@
           {% elif 'config_change' in alert_types %}
           config_drift
           {% else %}
-          unknown
+          {{ walk_unknown_root_cause }}
           {% endif %}
+
+    - name: Fail enrichment when root cause is unknown
+      ansible.builtin.fail:
+        msg: >-
+          Edwin AI did not map a Walk remediation (root_cause=unknown).
+          The workflow failure path launches Reset BGP Session.
+      when: (__root_cause | trim) == 'unknown'
 
     - name: Report enrichment results
       ansible.builtin.debug:

@@ -19,7 +19,11 @@
     - name: Assert all BGP peers are established
       ansible.builtin.assert:
         that:
+          - __bgp_summary.stdout[0] | length > 0
           - "'Idle' not in __bgp_summary.stdout[0]"
           - "'Active' not in __bgp_summary.stdout[0]"
+          - "'Connect' not in __bgp_summary.stdout[0]"
+          - "'OpenSent' not in __bgp_summary.stdout[0]"
+          - "'OpenConfirm' not in __bgp_summary.stdout[0]"
         fail_msg: "One or more BGP peers are not in Established state"
         success_msg: "All BGP peers are in Established state"

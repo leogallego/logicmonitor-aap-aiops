@@ -1,0 +1,12 @@
+---
+# Collections used by playbooks, the EDA rulebook, and AAP bootstrap.
+#   ansible-galaxy collection install -r collections/requirements.yml
+# That install is for the control node. Job templates use lm_aiops_ee;
+# bake arista.eos, ansible.netcommon, and logicmonitor.edwin_ai into
+# that EE or jobs fail at module load.
+collections:
+  - name: ansible.controller
+  - name: ansible.eda
+  - name: ansible.netcommon
+  - name: arista.eos
+  - name: logicmonitor.edwin_ai
