@@ -13,6 +13,13 @@
     # remediation_host: ""
 
   tasks:
+    - name: Reject malformed alert_id
+      ansible.builtin.assert:
+        that:
+          - alert_id is defined
+          - alert_id is match('^[A-Za-z0-9._:-]{1,128}$')
+        fail_msg: "alert_id must be 1-128 characters in [A-Za-z0-9._:-]"
+
     - name: Acknowledge alert in LogicMonitor
       ansible.builtin.uri:
         url: "https://{{ lm_company }}.logicmonitor.com/santaba/rest/alert/alerts/{{ alert_id }}/ack"

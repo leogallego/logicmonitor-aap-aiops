@@ -1,4 +1,6 @@
 ---
+- ansible.builtin.import_playbook: validate_lab_target.yml
+
 - name: Restart routing process to resolve CPU exhaustion
   hosts: "{{ affected_host }}"
   gather_facts: false

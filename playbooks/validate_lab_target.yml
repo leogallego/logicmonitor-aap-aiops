@@ -1,0 +1,32 @@
+---
+# First play for remediation and simulate playbooks. Rejects group names
+# such as all / arista before hosts: "{{ affected_host }}" is expanded.
+- name: Validate lab target host
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    allowed_lab_hosts:
+      - router1
+      - router2
+      - router3
+
+  tasks:
+    - name: Reject unlisted affected_host
+      ansible.builtin.assert:
+        that:
+          - affected_host in allowed_lab_hosts
+        fail_msg: >-
+          affected_host '{{ affected_host }}' is not in the allowlist
+          {{ allowed_lab_hosts }}. Refusing inventory-wide remediation.
+      when: affected_host is defined
+
+    - name: Reject unlisted target_host
+      ansible.builtin.assert:
+        that:
+          - (target_host | default('router2')) in allowed_lab_hosts
+        fail_msg: >-
+          target_host '{{ target_host | default('router2') }}' is not in
+          the allowlist {{ allowed_lab_hosts }}.
+      when: affected_host is not defined

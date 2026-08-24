@@ -1,4 +1,6 @@
 ---
+- ansible.builtin.import_playbook: validate_lab_target.yml
+
 - name: Simulate BGP config drift
   hosts: "{{ target_host | default('router2') }}"
   gather_facts: false

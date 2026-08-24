@@ -1,4 +1,6 @@
 ---
+- ansible.builtin.import_playbook: validate_lab_target.yml
+
 - name: Reset BGP session on affected device
   hosts: "{{ affected_host }}"
   gather_facts: false
@@ -70,6 +72,12 @@
         alert_id is not defined or alert_id | length == 0
         or lm_company is not defined or lm_company | length == 0
         or lm_bearer_token is not defined or lm_bearer_token | length == 0
+
+    - name: Reject malformed alert_id
+      ansible.builtin.assert:
+        that:
+          - alert_id is match('^[A-Za-z0-9._:-]{1,128}$')
+        fail_msg: "alert_id must be 1-128 characters in [A-Za-z0-9._:-]"
 
     - name: Acknowledge alert in LogicMonitor
       ansible.builtin.uri:

@@ -1,4 +1,6 @@
 ---
+- ansible.builtin.import_playbook: validate_lab_target.yml
+
 - name: Bounce interface to resolve BGP flapping
   hosts: "{{ affected_host }}"
   gather_facts: false
