@@ -13,6 +13,10 @@
 #   ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
 #     -e @lab-automation/credentials.yml -e full_bootstrap=true
 #
+# Job templates attach lm_aiops_ee (env LM_AIOPS_EE). That EE must
+# already exist and must contain arista.eos, ansible.netcommon, and
+# logicmonitor.edwin_ai.
+#
 # See lab-automation/credentials.yml.example for optional file-based values.
 
 - name: Bootstrap AAP Controller for LM AIOps demo

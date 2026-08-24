@@ -148,7 +148,10 @@ ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
 
 Basic bootstrap now also creates the Controller project, Network Inventory
 (lab hosts), Workshop Credential, and attaches `lm_aiops_ee` (default:
-Default execution environment — that EE must already exist).
+Default execution environment). That EE **must already exist** and must
+include `arista.eos`, `ansible.netcommon`, and `logicmonitor.edwin_ai`.
+`collections/requirements.yml` installs those on the control node only.
+Override with `LM_AIOPS_EE` or `lm_aiops_ee`.
 
 **Full bootstrap** also creates LM/Edwin credentials, the Event Stream, EDA
 project, rulebook activation, and the Walk workflow. Set
