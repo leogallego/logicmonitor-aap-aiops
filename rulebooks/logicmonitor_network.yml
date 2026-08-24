@@ -56,7 +56,7 @@
 
     # --- RUN: Unknown alerts, escalate to Edwin AI ---
     - name: Unmatched alert - escalate to Edwin AI
-      condition: event.payload.type is defined
+      condition: event.payload.type is defined and event.payload.type != "bgp_peer_down" and event.payload.type != "bgp_flapping"
       action:
         run_job_template:
           name: "Escalate to Edwin AI"
