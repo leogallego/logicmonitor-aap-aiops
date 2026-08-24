@@ -1,16 +1,14 @@
 ---
-- name: Escalate unmatched alert to Edwin AI for investigation
+- name: Escalate unmatched alert to Edwin AI
   hosts: localhost
   connection: local
-  gather_facts: false
+  gather_facts: true
 
   vars:
     # Passed from the EDA catch-all rule
     # raw_alert: {}
     # source: "eda_catch_all"
-    # edwin_portal: ""
-    # edwin_access_id: ""
-    # edwin_access_key: ""
+    # edwin_portal / edwin_access_id / edwin_access_key from credential injectors
 
   tasks:
     - name: Log escalation event
@@ -18,12 +16,20 @@
         msg: >-
           Escalating unmatched alert to Edwin AI.
           Alert type: {{ raw_alert.type | default('unknown') }}.
-          Source: {{ source }}.
-          No matching EDA rule found — Edwin AI will investigate
-          and recommend remediation via AAP MCP Server.
+          Source: {{ source | default('unknown') }}.
         verbosity: 0
 
-    - name: Query Edwin AI for context on the unmatched alert
+    - name: Query Edwin AI for correlated alerts
+      logicmonitor.edwin_ai.query_api:
+        portal: "{{ edwin_portal }}"
+        access_id: "{{ edwin_access_id }}"
+        access_key: "{{ edwin_access_key }}"
+        record_type: alerts
+        limit: 20
+        lookback_window: 3600
+      register: __edwin_alerts
+
+    - name: Query Edwin AI for insights
       logicmonitor.edwin_ai.query_api:
         portal: "{{ edwin_portal }}"
         access_id: "{{ edwin_access_id }}"
@@ -33,34 +39,21 @@
         lookback_window: 3600
       register: __edwin_insights
 
-    - name: Prepare alert context for Edwin AI agent
-      ansible.builtin.set_fact:
-        __escalation_payload:
-          alert: "{{ raw_alert }}"
-          source: "{{ source }}"
-          edwin_insights: "{{ __edwin_insights.data.results | default([]) }}"
-          timestamp: "{{ ansible_date_time.iso8601 | default(now()) }}"
+    - name: Set escalation artifacts for Controller and operators
+      ansible.builtin.set_stats:
+        data:
+          escalation_result: submitted
+          alert_type: "{{ raw_alert.type | default('unknown') }}"
+          correlated_alert_count: "{{ __edwin_alerts.data.results | default([]) | length }}"
+          insight_count: "{{ __edwin_insights.data.results | default([]) | length }}"
 
-    - name: Send escalation to Edwin AI agent endpoint
-      ansible.builtin.uri:
-        url: "https://{{ edwin_portal }}.dexda.ai/api/escalation"
-        method: POST
-        headers:
-          Authorization: "Bearer {{ edwin_access_key }}"
-          Content-Type: "application/json"
-        body_format: json
-        body: "{{ __escalation_payload }}"
-        status_code:
-          - 200
-          - 202
-      register: __escalation_result
-      changed_when: not __escalation_result.failed and __escalation_result.status in [200, 202]
-      ignore_errors: true
-
-    - name: Report escalation outcome
+    - name: Display Edwin AI context
       ansible.builtin.debug:
         msg: >-
-          Edwin AI escalation {{ 'succeeded' if not __escalation_result.failed else 'failed' }}.
-          Edwin AI will connect to AAP MCP Server to discover
-          and recommend remediation actions.
+          Edwin Query API returned
+          {{ __edwin_alerts.data.results | default([]) | length }} alerts and
+          {{ __edwin_insights.data.results | default([]) | length }} insights.
+          This job does not call AAP MCP. Point Edwin AI at the AAP MCP
+          server so the agent can discover job templates. There is no
+          public Edwin escalation HTTP API in this collection.
         verbosity: 0
