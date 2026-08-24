@@ -1,7 +1,11 @@
 ---
 # Bootstrap AAP Controller with LM AIOps demo objects.
 #
-# Basic run (credential types + job templates):
+# Controller connection (first match wins): extra vars, then env.
+#   export CONTROLLER_HOST / CONTROLLER_USERNAME / CONTROLLER_PASSWORD
+#   ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml
+#
+# Or pass a vars file (overrides env):
 #   ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
 #     -e @lab-automation/credentials.yml
 #
@@ -9,7 +13,7 @@
 #   ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
 #     -e @lab-automation/credentials.yml -e full_bootstrap=true
 #
-# See lab-automation/credentials.yml.example for all required variables.
+# See lab-automation/credentials.yml.example for optional file-based values.
 
 - name: Bootstrap AAP Controller for LM AIOps demo
   hosts: localhost
@@ -17,9 +21,9 @@
   gather_facts: false
 
   vars:
-    controller_host: "https://localhost"
-    controller_username: "admin"
-    controller_password: ""
+    controller_host: "{{ lookup('ansible.builtin.env', 'CONTROLLER_HOST') | default('https://localhost', true) }}"
+    controller_username: "{{ lookup('ansible.builtin.env', 'CONTROLLER_USERNAME') | default('admin', true) }}"
+    controller_password: "{{ lookup('ansible.builtin.env', 'CONTROLLER_PASSWORD') | default('ansible123!', true) }}"
     controller_verify_ssl: false
     full_bootstrap: false
 
@@ -41,9 +45,9 @@
           - controller_host != "https://localhost"
           - controller_password | length > 0
         fail_msg: >-
-          Controller credentials required. Copy credentials.yml.example
-          to credentials.yml, fill in your values, and pass with
-          -e @lab-automation/credentials.yml
+          Controller credentials required. Export CONTROLLER_HOST,
+          CONTROLLER_USERNAME, and CONTROLLER_PASSWORD, or pass
+          -e @lab-automation/credentials.yml (see credentials.yml.example).
 
     - name: Validate full bootstrap credentials
       ansible.builtin.assert:
