@@ -3,8 +3,18 @@
 # Tiered rules: Crawl (deterministic) → Walk (AI-enriched) → Run (agentic catch-all)
 #
 # Rules are evaluated in order, most specific first.
-# LM webhook payload fields are placeholders until verified against live LM webhook.
-# Update event.payload.* field names to match actual LM alert JSON structure.
+# Payload contract (not native LM JSON):
+#   type   — hardcoded per Custom HTTP integration (bgp_peer_down |
+#            bgp_flapping | network_anomaly_unknown). Do not use
+#            ##ALERTTYPE## (that token is alert/eventAlert/...).
+#   host   — ##HOST##, must match AAP inventory hostname
+#   id     — ##INTERNALID## (unique; used as alert_id extra var)
+# Templates: lab-automation/lm-webhook/
+# Not live-tested: token names and Custom HTTP substitution are from LM
+# docs / product knowledge, not a captured webhook. Synthetic tests
+# (validation/test_*.sh) already POST this schema. After first live LM
+# POST, confirm the rendered body still has type/host/id as above —
+# do not rename these keys to native LM field names.
 
 - name: LogicMonitor AIOps - Network Remediation
   hosts: all

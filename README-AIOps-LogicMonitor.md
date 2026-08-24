@@ -227,9 +227,17 @@ LM detects BGP peer down on network device
 
 ### Setup
 
-1. **Create an Event Stream in EDA Controller.** In the EDA Controller UI, navigate to Event Streams and create a new stream named "LogicMonitor Alerts". Select an HMAC credential type and save the generated secret -- you will configure LogicMonitor to sign payloads with it. The Event Stream provides a platform-managed URL that handles authentication, TLS, and event routing to rulebook activations.
+1. **Create an Event Stream in EDA Controller.** In the EDA Controller UI, navigate to Event Streams and create a new stream named "LogicMonitor Alerts". For live LogicMonitor Custom HTTP Delivery, prefer a **Token** (static header) credential -- LM cannot compute Event Stream HMAC signatures. HMAC remains useful for `validation/test_*.sh` synthetic posts. The Event Stream provides a platform-managed URL that handles authentication, TLS, and event routing to rulebook activations.
 
-2. **Configure the LogicMonitor webhook.** In the LM portal, create an integration that sends HTTP POST alerts to the Event Stream URL provided by AAP (not directly to port 5000). Include the HMAC secret for payload signing.
+2. **Configure LogicMonitor Custom HTTP Delivery.** Native LM tokens such as `##ALERTTYPE##` expand to `alert` / `eventAlert` / similar -- they never equal `bgp_peer_down`. Create **three** Custom HTTP integrations (one per stage) and paste the Raw JSON templates from `lab-automation/lm-webhook/`:
+
+   | Stage | Template | Hardcoded `type` |
+   |-------|----------|------------------|
+   | Crawl | `crawl-bgp-peer-down.json` | `bgp_peer_down` |
+   | Walk | `walk-bgp-flapping.json` | `bgp_flapping` |
+   | Run | `run-unmatched.json` | `network_anomaly_unknown` |
+
+   POST each integration to the Event Stream URL (not port 5000). Map `host` from `##HOST##` (LM device name must match inventory: `router1` / `router2` / `router3`) and `id` from `##INTERNALID##`. See `lab-automation/lm-webhook/README.md` for tokens, alert-rule assignment, and why HMAC signing is not available from Custom HTTP Delivery.
 
 3. **Deploy the EDA rulebook activation.** Create a rulebook activation in the EDA Controller using `rulebooks/logicmonitor_network.yml`. When configuring the activation, map the "LogicMonitor Alerts" Event Stream to the `ansible.eda.webhook` source defined in the rulebook. AAP replaces the source plugin with its internal event delivery mechanism at activation time. The Crawl-stage rule matches on `event.payload.type == "bgp_peer_down"`.
 
@@ -661,7 +669,8 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 
 | Issue | Cause | Resolution |
 |-------|-------|------------|
-| Webhook not reaching EDA | Firewall, incorrect Event Stream URL, HMAC mismatch, or activation not running | Verify Event Stream is active in EDA Controller; check HMAC credential matches LM webhook config; for standalone testing, POST directly to port 5000 |
+| Webhook not reaching EDA | Firewall, incorrect Event Stream URL, HMAC mismatch, or activation not running | Verify Event Stream is active; Custom HTTP cannot HMAC-sign -- use Token Event Stream or `validation/test_*.sh` for HMAC tests; standalone POST to port 5000 |
+| Live LM alert does not match Crawl/Walk | Body still uses native `##ALERTTYPE##` (`alert` / `eventAlert`) | Use the stage templates in `lab-automation/lm-webhook/`; `host` must equal inventory hostname |
 | BGP not re-establishing after reset | Hold timer not expired, or underlying link still down | Increase wait timeout in `playbooks/reset_bgp_session.yml`; verify link connectivity on affected device |
 | Edwin AI query returns empty results | Incorrect credentials, wrong portal name, or no alerts in lookback window | Verify Edwin AI credential type is attached to the job template; check `edwin_lookback_window` value |
 | Edwin AI timeout during enrichment | Network latency or Edwin AI portal outage | The workflow failure fallback triggers the default BGP reset (Crawl behavior) |

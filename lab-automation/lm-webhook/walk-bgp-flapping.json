@@ -1,0 +1,12 @@
+{
+  "type": "bgp_flapping",
+  "severity": "##LEVEL##",
+  "host": "##HOST##",
+  "id": "##INTERNALID##",
+  "alert_id": "##ALERTID##",
+  "message": "##MESSAGE##",
+  "datasource": "##DATASOURCE##",
+  "datapoint": "##DATAPOINT##",
+  "instance": "##INSTANCE##",
+  "lm_alert_type": "##ALERTTYPE##"
+}
