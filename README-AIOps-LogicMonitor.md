@@ -221,7 +221,7 @@ LM detects BGP peer down on network device
       -> Condition matches: alert_type == "bgp_peer_down"
         -> Triggers Job Template: "Reset BGP Session"
           -> Playbook enables Ethernet1, then clears BGP sessions
-            -> Validates Estab in show ip bgp summary
+            -> Waits until show ip bgp summary has no Idle/Active/Connect peers
               -> Reports back to LM (acknowledge/annotate alert)
 ```
 
@@ -277,7 +277,7 @@ The rulebook evaluates the alert and matches the Crawl rule:
           alert_id: "{{ event.payload.id }}"
 ```
 
-The "Reset BGP Session" job template (`playbooks/reset_bgp_session.yml`) targets the affected device. In this lab the Crawl fault is an interface shutdown (`playbooks/simulate_bgp_down.yml` on `Ethernet1` by default), so the playbook enables that interface first, then clears BGP sessions, waits for `Estab` in `show ip bgp summary`, and validates recovery. `clear ip bgp *` alone cannot unshut a link. On success, it reports the remediation result back to LogicMonitor via `playbooks/report_to_logicmonitor.yml`, which acknowledges and annotates the alert:
+The "Reset BGP Session" job template (`playbooks/reset_bgp_session.yml`) targets the affected device. In this lab the Crawl fault is an interface shutdown (`playbooks/simulate_bgp_down.yml` on `Ethernet1` by default), so the playbook enables that interface first, then clears BGP sessions, waits until `show ip bgp summary` has no Idle/Active/Connect peers, and validates recovery. `clear ip bgp *` alone cannot unshut a link. On success, it reports the remediation result back to LogicMonitor via `playbooks/report_to_logicmonitor.yml`, which acknowledges and annotates the alert:
 
 ```yaml
 # Note: The logicmonitor.integration collection does not yet include an alert
@@ -674,7 +674,7 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 |-------|-------|------------|
 | Webhook not reaching EDA | Firewall, incorrect Event Stream URL, HMAC mismatch, or activation not running | Verify Event Stream is active; Custom HTTP cannot HMAC-sign -- use Token Event Stream or `validation/test_*.sh` for HMAC tests; standalone POST to port 5000 |
 | Live LM alert does not match Crawl/Walk | Body still uses native `##ALERTTYPE##` (`alert` / `eventAlert`) | Use the stage templates in `lab-automation/lm-webhook/`; `host` must equal inventory hostname |
-| BGP not re-establishing after reset | Hold timer not expired, wrong interface still shut, or `show ip bgp summary` never contains `Estab` | Confirm `Ethernet1` (or `interface` extra var) is the shut link; increase wait timeout in `playbooks/reset_bgp_session.yml`; capture live summary output |
+| BGP not re-establishing after reset | Hold timer not expired, wrong interface still shut, or a remaining mesh peer hid a down session | Confirm `Ethernet1` (or `interface` extra var) is the shut link; increase wait timeout in `playbooks/reset_bgp_session.yml`; capture live summary and look for Idle/Active |
 | Edwin AI query returns empty results | Incorrect credentials, wrong portal name, or no alerts in lookback window | Verify Edwin AI credential type is attached to the job template; check `edwin_lookback_window` value |
 | Edwin AI timeout during enrichment | Network latency or Edwin AI portal outage | The workflow failure fallback triggers the default BGP reset (Crawl behavior) |
 | MCP Server not connecting | AAP MCP Server not deployed, or toolsets not enabled | Verify `aap-mcp-server` is running; check toolset configuration |

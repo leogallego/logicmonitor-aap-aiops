@@ -27,7 +27,8 @@
     - name: Assert BGP is healthy before taking known-good snapshot
       ansible.builtin.assert:
         that:
-          - "'Estab' in __bgp_before.stdout[0]"
+          - __bgp_before.stdout[0] | length > 0
+          - (__bgp_before.stdout[0] | regex_findall('Idle|Active|Connect|OpenSent|OpenConfirm') | length) == 0
         fail_msg: >-
           BGP is not established. Refusing to overwrite flash:{{ known_good_flash_file }}
           with a broken running-config. Run rollback first, then simulate.

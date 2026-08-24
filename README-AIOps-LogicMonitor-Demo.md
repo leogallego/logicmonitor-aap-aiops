@@ -90,7 +90,7 @@ router1> enable
 router1# show ip bgp summary
 ```
 
-All neighbors should show `Estab` (EOS summary abbreviation; some views print `Established`). Repeat for `router2` and `router3` to confirm full-mesh peering.
+All neighbors should be up: State `Estab`/`Established`, or a prefix count in `State/PfxRcd` with no Idle/Active. Repeat for `router2` and `router3` to confirm full-mesh peering.
 
 Alternatively, use the validation playbook:
 
@@ -286,7 +286,7 @@ This runs against `router2` by default and **leaves** `Ethernet1` shut (the link
 3. **EDA rulebook** matches `event.payload.type == "bgp_peer_down"` (Crawl rule)
 4. **EDA** triggers the "Reset BGP Session" job template in AAP Controller
 5. **AAP** runs `playbooks/reset_bgp_session.yml` targeting `router2`
-6. The playbook enables `Ethernet1` (the lab-induced shut), clears BGP sessions, and waits for `Estab` in `show ip bgp summary`
+6. The playbook enables `Ethernet1` (the lab-induced shut), clears BGP sessions, and waits until `show ip bgp summary` has no Idle/Active/Connect peers
 7. BGP re-establishes between `router2` and `router1`
 8. AAP reports the remediation result back to LogicMonitor (the Crawl job
    acknowledges the alert when `alert_id` and LM credentials are present)
@@ -384,7 +384,7 @@ Introduce a wrong AS number in the BGP configuration:
 ansible-playbook playbooks/simulate_config_drift.yml -i inventory/hosts.yml
 ```
 
-This first copies running-config to `flash:lm-aiops-known-good` on `router2` (BGP must already be `Estab`), then changes the neighbor AS for `10.1.12.1` (router1) from `64501` to `99999`. The snapshot is on the device so the AAP rollback job can see it. Do not run simulate twice without rollback — the playbook refuses to snapshot a broken mesh. Do not `write memory` after simulate.
+This first copies running-config to `flash:lm-aiops-known-good` on `router2` (no BGP peer may be Idle/Active), then changes the neighbor AS for `10.1.12.1` (router1) from `64501` to `99999`. The snapshot is on the device so the AAP rollback job can see it. Do not run simulate twice without rollback — the playbook refuses to snapshot a broken mesh. Do not `write memory` after simulate.
 
 #### 3B.2 Observe the End-to-End Flow
 

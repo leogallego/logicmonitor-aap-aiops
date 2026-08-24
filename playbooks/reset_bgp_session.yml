@@ -35,15 +35,19 @@
           - show ip bgp summary
       register: __bgp_after
       changed_when: false
-      # EOS summary State is often Estab; that string also matches Established.
-      until: "'Estab' in __bgp_after.stdout[0]"
+      # Down sessions print Idle/Active/Connect. Do not match Estab — a
+      # remaining mesh peer would pass while the repaired session is down.
+      until: >-
+        (__bgp_after.stdout[0] | default('') | length > 0)
+        and ((__bgp_after.stdout[0] | regex_findall('Idle|Active|Connect|OpenSent|OpenConfirm')) | length == 0)
       retries: 6
       delay: 5
 
     - name: Assert BGP peers are established
       ansible.builtin.assert:
         that:
-          - "'Estab' in __bgp_after.stdout[0]"
+          - __bgp_after.stdout[0] | length > 0
+          - (__bgp_after.stdout[0] | regex_findall('Idle|Active|Connect|OpenSent|OpenConfirm') | length) == 0
         fail_msg: "BGP peers did not re-establish after reset"
         success_msg: "BGP peers successfully re-established"
 
