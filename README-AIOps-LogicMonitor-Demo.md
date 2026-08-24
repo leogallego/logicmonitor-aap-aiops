@@ -452,8 +452,8 @@ This sends a `network_anomaly_unknown` alert to the EDA webhook with:
 2. No specific Crawl or Walk rule matches `network_anomaly_unknown`
 3. **Catch-all rule** fires: "Unmatched alert - escalate to Edwin AI"
 4. **EDA** triggers the "Escalate to Edwin AI" job template
-5. The playbook sends the raw alert context to Edwin AI
-6. **Edwin AI** connects to the AAP MCP Server and investigates:
+5. The playbook queries Edwin AI (`query_api` for alerts and insights) and records counts on the job
+6. **Edwin AI** (when pointed at AAP MCP) investigates:
    - Discovers available job templates and workflows
    - Queries inventory for affected device details
    - Checks recent job history
@@ -481,7 +481,7 @@ Sending unknown alert type to EDA...
 HTTP Status: 200
 
 Check AAP Controller for 'Escalate to Edwin AI' job execution.
-Expected: Job launches, sends context to Edwin AI for MCP-based investigation.
+Expected: Job launches, queries Edwin AI, and records correlated alert/insight counts. MCP is Edwin-initiated.
 ```
 
 ---

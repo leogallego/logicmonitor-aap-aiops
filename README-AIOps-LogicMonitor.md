@@ -542,10 +542,10 @@ The Run stage handles the long tail of alerts that do not match any explicit rul
 LM sends alert that doesn't match any explicit rulebook rule
   -> LM webhook to EDA Event Stream
     -> Rulebook activation evaluates alert
-      -> No specific rule matches
+      -> No specific rule matches (and type is not Crawl/Walk)
         -> Catch-all rule fires: "Escalate to Edwin AI"
-          -> Job Template passes raw alert context to Edwin AI
-            -> Edwin AI analyzes the alert
+          -> Job Template queries Edwin AI (alerts + insights)
+            -> Operator points Edwin AI at AAP MCP Server
               -> Edwin AI connects to AAP MCP Server
                 -> Discovers available job/workflow templates (within RBAC)
                 -> Queries inventory (which devices, groups)
@@ -563,7 +563,7 @@ LM sends alert that doesn't match any explicit rulebook rule
 
 2. **Configure toolsets.** Enable at minimum the `job_management` and `inventory_management` toolsets. These allow Edwin AI to discover job templates, query inventory hosts, check job history, and launch automation -- all within the boundaries of the authenticated user's RBAC permissions.
 
-3. **Create the escalation job template.** The "Escalate to Edwin AI" template (`playbooks/escalate_to_edwin_ai.yml`) receives the raw alert payload from the catch-all rule and sends it to Edwin AI for investigation. Attach the "Edwin AI API" credential created during the Walk stage setup (the bootstrap creates the credential type but not the credential itself).
+3. **Create the escalation job template.** The "Escalate to Edwin AI" template (`playbooks/escalate_to_edwin_ai.yml`) receives the raw alert payload from the catch-all rule and queries Edwin AI (`logicmonitor.edwin_ai.query_api` for alerts and insights). There is no public Edwin HTTP escalation API in this collection. Attach the "Edwin AI API" credential. With `full_bootstrap=true`, bootstrap creates that credential and attaches it. Point Edwin AI at the AAP MCP Server so the agent can discover job templates; this job does not call MCP.
 
 | Field | Value |
 |-------|-------|
@@ -584,7 +584,7 @@ LogicMonitor detects an unusual pattern -- a novel alert type or combination tha
 ```yaml
 # --- RUN: Unknown alerts, escalate to Edwin AI ---
 - name: Unmatched alert - escalate to Edwin AI
-  condition: event.payload.type is defined
+  condition: event.payload.type is defined and event.payload.type != "bgp_peer_down" and event.payload.type != "bgp_flapping"
   action:
     run_job_template:
       name: "Escalate to Edwin AI"
@@ -595,21 +595,24 @@ LogicMonitor detects an unusual pattern -- a novel alert type or combination tha
           source: "eda_catch_all"
 ```
 
-Because the rules in the rulebook are evaluated in order (most specific first), the catch-all only fires when no Crawl or Walk rule has matched.
+Rules are evaluated in order (most specific first). The catch-all also excludes `bgp_peer_down` and `bgp_flapping` so those types cannot fall through.
 
 ### What Edwin AI Does via MCP
 
-Once Edwin AI receives the escalation, it connects to the AAP MCP Server and proceeds through an investigation workflow:
+The escalate job gathers Edwin context via Query API. MCP investigation is Edwin-initiated (operator points Edwin at AAP MCP), not a POST from this playbook.
 
-1. Receives the raw alert context from the escalation playbook
-2. Connects to the AAP MCP Server using the authenticated user's permissions
-3. Discovers available job templates and workflow templates
-4. Queries the inventory to understand the affected infrastructure
-5. Checks recent job history -- has similar automation been tried on this device before?
-6. Formulates a recommendation: which automation to run, on which hosts, with what parameters
-7. Presents the recommendation for human approval (or auto-approves based on policy)
-8. The AAP MCP Server triggers the approved automation
-9. Results are returned and reported back to LogicMonitor
+**Job template:** receive raw alert extra vars from EDA; query Edwin for correlated alerts and insights; record counts on the job.
+
+**When Edwin is pointed at AAP MCP:**
+
+1. Connects to the AAP MCP Server using the authenticated user's permissions
+2. Discovers available job templates and workflow templates
+3. Queries the inventory to understand the affected infrastructure
+4. Checks recent job history -- has similar automation been tried on this device before?
+5. Formulates a recommendation: which automation to run, on which hosts, with what parameters
+6. Presents the recommendation for human approval (or auto-approves based on policy)
+7. The AAP MCP Server triggers the approved automation
+8. Results are returned and reported back to LogicMonitor
 
 Every action Edwin AI takes through the MCP Server is governed by the same RBAC policies that apply to human operators. It can only discover and invoke automation that the authenticated user is authorized to use.
 
@@ -623,11 +626,11 @@ The official LogicMonitor MCP server (`logicmonitor/logicmonitor-api-mcp`, 13 to
 
 ### Validation
 
-Send an alert type that does not match any explicit Crawl or Walk rule. Verify in the AAP Controller that the "Escalate to Edwin AI" job launches and the alert context reaches Edwin AI for MCP-based investigation.
+Send an alert type that does not match any explicit Crawl or Walk rule. Verify in the AAP Controller that the "Escalate to Edwin AI" job launches, Query API returns, and job stats include correlated alert and insight counts.
 
 **Expected result in AAP Controller:**
 
-The "Escalate to Edwin AI" job completes successfully. Edwin AI receives the alert context and begins investigation via the AAP MCP Server, discovering available templates and recommending remediation.
+The "Escalate to Edwin AI" job completes successfully. Job output shows Query API results. MCP investigation happens only if Edwin is pointed at the AAP MCP Server.
 
 <!-- TODO: Add screenshot of AAP job log showing escalation when live environment is available -->
 
@@ -641,7 +644,7 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 | EDA source | `ansible.eda.webhook` (same as Crawl/Walk) |
 | Rulebook | Adds catch-all escalation rule (lowest priority) |
 | Job Template | "Escalate to Edwin AI" |
-| Escalation playbook | `playbooks/escalate_to_edwin_ai.yml` -- sends alert context to Edwin AI |
+| Escalation playbook | `playbooks/escalate_to_edwin_ai.yml` -- Query API for alerts and insights; MCP is Edwin-initiated |
 | AAP MCP Server | `ansible/aap-mcp-server` deployed alongside AAP |
 | MCP Toolsets | `job_management`, `inventory_management` at minimum |
 | Optional | Official LM MCP Server (`logicmonitor/logicmonitor-api-mcp`) for bidirectional LM exploration |
@@ -662,7 +665,7 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 | **Walk** | Verify workflow node execution | Enrichment node runs first, correct branch follows based on root cause |
 | **Walk** | Edwin AI returns correlated alerts | Workflow selects appropriate remediation (bounce, rollback, or default reset) |
 | **Run** | Unmatched alert type fires in LogicMonitor | Catch-all rule triggers "Escalate to Edwin AI" job |
-| **Run** | Verify Edwin AI MCP interaction | Edwin AI discovers AAP templates, recommends action |
+| **Run** | Verify Edwin Query API and optional MCP | Escalate job queries Edwin; MCP only if Edwin is pointed at AAP MCP |
 | **Run** | Check AAP audit log | Escalation and any MCP-triggered actions are logged |
 
 ### Common Issues
