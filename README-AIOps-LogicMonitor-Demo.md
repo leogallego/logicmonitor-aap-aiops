@@ -288,7 +288,8 @@ This runs against `router2` by default and **leaves** `Ethernet1` shut (the link
 5. **AAP** runs `playbooks/reset_bgp_session.yml` targeting `router2`
 6. The playbook enables `Ethernet1` (the lab-induced shut), clears BGP sessions, and waits for `Estab` in `show ip bgp summary`
 7. BGP re-establishes between `router2` and `router1`
-8. AAP reports the remediation result back to LogicMonitor (alert acknowledged)
+8. AAP reports the remediation result back to LogicMonitor (the Crawl job
+   acknowledges the alert when `alert_id` and LM credentials are present)
 
 ### 2.4 Run the Validation Script
 

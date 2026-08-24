@@ -53,3 +53,31 @@
           remediation_result: "bgp_reset_success"
           remediation_host: "{{ affected_host }}"
           alert_id: "{{ alert_id }}"
+
+- name: Acknowledge LogicMonitor alert after Crawl reset
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Skip LogicMonitor ack when alert_id is missing
+      ansible.builtin.meta: end_play
+      when: alert_id is not defined or alert_id | length == 0
+
+    - name: Acknowledge alert in LogicMonitor
+      ansible.builtin.uri:
+        url: "https://{{ lm_company }}.logicmonitor.com/santaba/rest/alert/alerts/{{ alert_id }}/ack"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ lm_bearer_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          ackComment: >-
+            Automated remediation by AAP: bgp_reset_success
+            on host {{ affected_host }}.
+        status_code:
+          - 200
+          - 202
+      register: __ack_result
+      changed_when: __ack_result.status in [200, 202]

@@ -402,6 +402,20 @@
         validate_certs: "{{ controller_verify_ssl }}"
       when: full_bootstrap | bool
 
+    - name: "Attach LM API credential to Reset BGP Session"
+      ansible.controller.job_template:
+        name: "Reset BGP Session"
+        organization: "{{ lm_aiops_org }}"
+        credentials:
+          - "{{ lm_aiops_credential }}"
+          - "LogicMonitor API"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
     # --- Attach LM API credential to Report to LogicMonitor ---
     - name: "Attach LM API credential to Report to LogicMonitor"
       ansible.controller.job_template:
