@@ -119,17 +119,38 @@ If AAP is running on a different host from ContainerLab, update `ansible_host` t
 
 ### 1.5 Run the AAP Bootstrap
 
-The bootstrap playbook creates all AAP Controller objects needed for the demo:
+Controller connection comes from extra vars first, then environment. The playbook does **not** ship a default password.
+
+**Option A — environment (credential types + job templates only):**
 
 ```bash
 export CONTROLLER_HOST="https://<your-aap-controller>"
 export CONTROLLER_USERNAME="admin"
 export CONTROLLER_PASSWORD="<your-password>"
+# optional: export CONTROLLER_VERIFY_SSL=true
 
 ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml
 ```
 
-This creates:
+**Option B — vars file (same objects, values in one place):**
+
+```bash
+cp lab-automation/credentials.yml.example lab-automation/credentials.yml
+# edit credentials.yml; it is gitignored — do not commit it
+
+ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
+  -e @lab-automation/credentials.yml
+```
+
+**Full bootstrap** also creates LM/Edwin credentials, the Event Stream, and the Walk workflow:
+
+```bash
+ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
+  -e @lab-automation/credentials.yml \
+  -e full_bootstrap=true
+```
+
+Basic bootstrap creates:
 
 | Object | Name | Stage |
 |--------|------|-------|
@@ -144,13 +165,15 @@ This creates:
 | Job Template | Escalate to Edwin AI | Run |
 | Job Template | Report to LogicMonitor | All |
 
-After the bootstrap completes, manually create:
+After a **basic** bootstrap, create these in the UI (skip if you used `full_bootstrap=true`):
 
 - **LM API credential** using the "LogicMonitor API" credential type with your company name and bearer token
 - **Edwin AI credential** using the "Edwin AI API" credential type with your portal, access ID, and access key. After creating the credential, attach it to the **"Enrich with Edwin AI"** and **"Escalate to Edwin AI"** job templates (these templates need both the Workshop Credential and the Edwin AI credential)
 - **"BGP Smart Remediation" workflow template** with the node topology described in the [Solution Guide](README-AIOps-LogicMonitor.md#stage-2----walk-ai-enriched-remediation)
 
 ### 1.6 Create the EDA Event Stream
+
+Skip this section if you already ran with `full_bootstrap=true` (the playbook creates "LogicMonitor Alerts").
 
 In the EDA Controller UI:
 
@@ -478,7 +501,7 @@ This removes all three router containers and the lab network links.
 
 | Issue | Cause | Resolution |
 |-------|-------|------------|
-| Bootstrap playbook fails | Wrong Controller URL or credentials | Verify `CONTROLLER_HOST`, `CONTROLLER_USERNAME`, `CONTROLLER_PASSWORD` environment variables |
+| Bootstrap playbook fails | Wrong Controller URL or credentials, or password unset | Export `CONTROLLER_HOST` / `CONTROLLER_USERNAME` / `CONTROLLER_PASSWORD`, or pass `-e @lab-automation/credentials.yml`. There is no default password. |
 | EDA webhook not receiving alerts | Event Stream misconfigured, HMAC mismatch, or activation not started | Verify Event Stream URL (or port 5000 for standalone). Custom HTTP cannot HMAC-sign -- use Token Event Stream or `validation/test_*.sh` for HMAC tests |
 | Live LM alert hits catch-all / no JT | Native `##ALERTTYPE##` used instead of hardcoded `type` | Paste `lab-automation/lm-webhook/*.json` as Raw JSON. Confirm LM device name matches inventory hostname |
 | Wrong job template launches | Rulebook rule ordering | Rules are evaluated top-to-bottom. Verify specific rules (Crawl, Walk) appear before the catch-all (Run) in `rulebooks/logicmonitor_network.yml` |

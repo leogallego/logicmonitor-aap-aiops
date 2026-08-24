@@ -23,8 +23,8 @@
   vars:
     controller_host: "{{ lookup('ansible.builtin.env', 'CONTROLLER_HOST') | default('https://localhost', true) }}"
     controller_username: "{{ lookup('ansible.builtin.env', 'CONTROLLER_USERNAME') | default('admin', true) }}"
-    controller_password: "{{ lookup('ansible.builtin.env', 'CONTROLLER_PASSWORD') | default('ansible123!', true) }}"
-    controller_verify_ssl: false
+    controller_password: "{{ lookup('ansible.builtin.env', 'CONTROLLER_PASSWORD') | default('', true) }}"
+    controller_verify_ssl: "{{ lookup('ansible.builtin.env', 'CONTROLLER_VERIFY_SSL') | default('false', true) | bool }}"
     full_bootstrap: false
 
     lm_aiops_org: "Network Ops"
@@ -97,8 +97,8 @@
             - lm_bearer_token
         injectors:
           extra_vars:
-            lm_company: "{{ lm_company }}"
-            lm_bearer_token: "{{ lm_bearer_token }}"
+            lm_company: !unsafe "{{ lm_company }}"
+            lm_bearer_token: !unsafe "{{ lm_bearer_token }}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
@@ -127,9 +127,9 @@
             - edwin_access_key
         injectors:
           extra_vars:
-            edwin_portal: "{{ edwin_portal }}"
-            edwin_access_id: "{{ edwin_access_id }}"
-            edwin_access_key: "{{ edwin_access_key }}"
+            edwin_portal: !unsafe "{{ edwin_portal }}"
+            edwin_access_id: !unsafe "{{ edwin_access_id }}"
+            edwin_access_key: !unsafe "{{ edwin_access_key }}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
@@ -340,7 +340,7 @@
     - name: "Create EDA HMAC credential for webhook signing"
       ansible.eda.credential:
         name: "LM Webhook HMAC"
-        credential_type_name: "HMAC"
+        credential_type_name: "HMAC Event Stream"
         organization_name: "{{ lm_aiops_org }}"
         inputs:
           secret: "{{ eda_hmac_secret }}"
