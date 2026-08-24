@@ -63,4 +63,6 @@
           neighbor:
             - neighbor_address: 10.1.12.1
               remote_as: 99999
-        state: replaced
+        # merged: only update this neighbor. replaced would drop
+        # router2's other BGP peer.
+        state: merged
