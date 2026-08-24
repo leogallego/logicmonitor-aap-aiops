@@ -90,7 +90,7 @@ router1> enable
 router1# show ip bgp summary
 ```
 
-All neighbors should show `Established` state. Repeat for `router2` and `router3` to confirm full-mesh peering.
+All neighbors should show `Estab` (EOS summary abbreviation; some views print `Established`). Repeat for `router2` and `router3` to confirm full-mesh peering.
 
 Alternatively, use the validation playbook:
 
@@ -242,7 +242,7 @@ Shut down an interface on `router2` to break BGP peering with `router1`:
 ansible-playbook playbooks/simulate_bgp_down.yml -i inventory/hosts.yml
 ```
 
-This runs against `router2` by default, shutting down `Ethernet1` (the link to `router1`). The BGP session between `router2` (AS 64502) and `router1` (AS 64501) will drop.
+This runs against `router2` by default and **leaves** `Ethernet1` shut (the link to `router1`). Restore tasks are tagged `never` / `restore`, so they do not run unless you pass `--tags restore`. The BGP session between `router2` (AS 64502) and `router1` (AS 64501) stays down until Crawl remediation (or a manual restore).
 
 ### 2.3 Observe the End-to-End Flow
 
@@ -251,7 +251,7 @@ This runs against `router2` by default, shutting down `Ethernet1` (the link to `
 3. **EDA rulebook** matches `event.payload.type == "bgp_peer_down"` (Crawl rule)
 4. **EDA** triggers the "Reset BGP Session" job template in AAP Controller
 5. **AAP** runs `playbooks/reset_bgp_session.yml` targeting `router2`
-6. The playbook resets BGP sessions and validates recovery
+6. The playbook enables `Ethernet1` (the lab-induced shut), clears BGP sessions, and waits for `Estab` in `show ip bgp summary`
 7. BGP re-establishes between `router2` and `router1`
 8. AAP reports the remediation result back to LogicMonitor (alert acknowledged)
 
@@ -281,7 +281,7 @@ After running the script, verify in the AAP Controller UI:
 
 ### 2.5 Restore BGP (if needed)
 
-If BGP did not auto-recover, bring the interface back up:
+If the Crawl job did not run (or failed before enabling the link), bring the interface back up:
 
 ```bash
 ansible-playbook playbooks/simulate_bgp_down.yml -i inventory/hosts.yml --tags restore

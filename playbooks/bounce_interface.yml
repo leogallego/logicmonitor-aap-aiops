@@ -35,14 +35,15 @@
           - show ip bgp summary
       register: __bgp_after
       changed_when: false
-      until: "'Established' in __bgp_after.stdout[0]"
+      # EOS summary State is often Estab; that string also matches Established.
+      until: "'Estab' in __bgp_after.stdout[0]"
       retries: 6
       delay: 5
 
     - name: Assert BGP peers are established
       ansible.builtin.assert:
         that:
-          - "'Established' in __bgp_after.stdout[0]"
+          - "'Estab' in __bgp_after.stdout[0]"
         fail_msg: "BGP peers did not re-establish after interface bounce"
         success_msg: "BGP peers re-established after interface bounce"
 

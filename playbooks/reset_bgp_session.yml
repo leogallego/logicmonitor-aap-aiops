@@ -3,6 +3,9 @@
   hosts: "{{ affected_host }}"
   gather_facts: false
 
+  vars:
+    target_interface: "{{ interface | default('Ethernet1') }}"
+
   tasks:
     - name: Gather current BGP summary
       arista.eos.eos_command:
@@ -10,6 +13,15 @@
           - show ip bgp summary
       register: __bgp_before
       changed_when: false
+
+    # Lab Crawl fault is an interface shutdown (simulate_bgp_down.yml).
+    # clear ip bgp * cannot unshut a link; enable first (idempotent if already up).
+    - name: Ensure interface is enabled
+      arista.eos.eos_interfaces:
+        config:
+          - name: "{{ target_interface }}"
+            enabled: true
+        state: merged
 
     - name: Clear BGP sessions
       arista.eos.eos_command:
@@ -23,14 +35,15 @@
           - show ip bgp summary
       register: __bgp_after
       changed_when: false
-      until: "'Established' in __bgp_after.stdout[0]"
+      # EOS summary State is often Estab; that string also matches Established.
+      until: "'Estab' in __bgp_after.stdout[0]"
       retries: 6
       delay: 5
 
     - name: Assert BGP peers are established
       ansible.builtin.assert:
         that:
-          - "'Established' in __bgp_after.stdout[0]"
+          - "'Estab' in __bgp_after.stdout[0]"
         fail_msg: "BGP peers did not re-establish after reset"
         success_msg: "BGP peers successfully re-established"
 
