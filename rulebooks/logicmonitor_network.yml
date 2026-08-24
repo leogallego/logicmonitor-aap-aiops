@@ -25,7 +25,8 @@
     # webhook type below is irrelevant in production.
     # For standalone development/testing without Event Streams, POST directly
     # to http://<eda-host>:5000/logicmonitor.
-    - ansible.eda.webhook:
+    - name: logicmonitor
+      ansible.eda.webhook:
         host: 0.0.0.0
         port: 5000
   rules:

@@ -1,0 +1,9 @@
+---
+# Collections used by playbooks, the EDA rulebook, and AAP bootstrap.
+#   ansible-galaxy collection install -r collections/requirements.yml
+collections:
+  - name: ansible.controller
+  - name: ansible.eda
+  - name: ansible.netcommon
+  - name: arista.eos
+  - name: logicmonitor.edwin_ai

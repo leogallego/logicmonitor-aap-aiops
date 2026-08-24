@@ -127,6 +127,8 @@ Controller connection comes from extra vars first, then environment. The playboo
 export CONTROLLER_HOST="https://<your-aap-controller>"
 export CONTROLLER_USERNAME="admin"
 export CONTROLLER_PASSWORD="<your-password>"
+export LM_AIOPS_PROJECT_URL="https://github.com/<you>/logicmonitor-aap-aiops.git"
+export WORKSHOP_SSH_PASSWORD="<lab-eos-ssh-password>"
 # optional: export CONTROLLER_VERIFY_SSL=true
 
 ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml
@@ -137,12 +139,19 @@ ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml
 ```bash
 cp lab-automation/credentials.yml.example lab-automation/credentials.yml
 # edit credentials.yml; it is gitignored — do not commit it
+# required: controller_*, lm_aiops_project_url, workshop_ssh_password
 
 ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
   -e @lab-automation/credentials.yml
 ```
 
-**Full bootstrap** also creates LM/Edwin credentials, the Event Stream, and the Walk workflow:
+Basic bootstrap now also creates the Controller project, Network Inventory
+(lab hosts), Workshop Credential, and attaches `lm_aiops_ee` (default:
+Default execution environment — that EE must already exist).
+
+**Full bootstrap** also creates LM/Edwin credentials, the Event Stream, EDA
+project, rulebook activation, and the Walk workflow. Set
+`eda_controller_token_name` to an EDA token that can launch job templates.
 
 ```bash
 ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml \
@@ -155,6 +164,9 @@ Basic bootstrap creates:
 | Object | Name | Stage |
 |--------|------|-------|
 | Organization | Network Ops | All |
+| Project | LM AIOps Solution Guide | All |
+| Inventory | Network Inventory | All |
+| Credential | Workshop Credential | All |
 | Credential Type | LogicMonitor API | All |
 | Credential Type | Edwin AI API | Walk, Run |
 | Job Template | Reset BGP Session | Crawl |

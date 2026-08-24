@@ -29,10 +29,20 @@
 
     lm_aiops_org: "Network Ops"
     lm_aiops_project_name: "LM AIOps Solution Guide"
-    lm_aiops_project_url: ""
+    lm_aiops_project_url: "{{ lookup('ansible.builtin.env', 'LM_AIOPS_PROJECT_URL') | default('', true) }}"
+    lm_aiops_project_branch: "{{ lookup('ansible.builtin.env', 'LM_AIOPS_PROJECT_BRANCH') | default('main', true) }}"
     lm_aiops_inventory: "Network Inventory"
     lm_aiops_credential: "Workshop Credential"
-    lm_aiops_ee: "Default execution environment"
+    lm_aiops_ee: "{{ lookup('ansible.builtin.env', 'LM_AIOPS_EE') | default('Default execution environment', true) }}"
+    workshop_ssh_user: "{{ lookup('ansible.builtin.env', 'WORKSHOP_SSH_USER') | default('admin', true) }}"
+    workshop_ssh_password: "{{ lookup('ansible.builtin.env', 'WORKSHOP_SSH_PASSWORD') | default('', true) }}"
+    lab_inventory_hosts:
+      router1: clab-lm-aiops-bgp-router1
+      router2: clab-lm-aiops-bgp-router2
+      router3: clab-lm-aiops-bgp-router3
+    eda_decision_environment: "{{ lookup('ansible.builtin.env', 'EDA_DECISION_ENVIRONMENT') | default('Default Decision Environment', true) }}"
+    eda_controller_token_name: "{{ lookup('ansible.builtin.env', 'EDA_CONTROLLER_TOKEN_NAME') | default('', true) }}"
+    eda_rulebook_name: logicmonitor_network.yml
 
   tasks:
     # =================================================================
@@ -44,10 +54,12 @@
         that:
           - controller_host != "https://localhost"
           - controller_password | length > 0
+          - lm_aiops_project_url | length > 0
+          - workshop_ssh_password | length > 0
         fail_msg: >-
-          Controller credentials required. Export CONTROLLER_HOST,
-          CONTROLLER_USERNAME, and CONTROLLER_PASSWORD, or pass
-          -e @lab-automation/credentials.yml (see credentials.yml.example).
+          Set CONTROLLER_HOST, CONTROLLER_USERNAME, CONTROLLER_PASSWORD,
+          LM_AIOPS_PROJECT_URL (git URL of this repo), and
+          WORKSHOP_SSH_PASSWORD, or pass -e @lab-automation/credentials.yml.
 
     - name: Validate full bootstrap credentials
       ansible.builtin.assert:
@@ -58,9 +70,11 @@
           - edwin_access_id is defined and edwin_access_id != "CHANGEME"
           - edwin_access_key is defined and edwin_access_key != "CHANGEME"
           - eda_hmac_secret is defined and eda_hmac_secret != "CHANGEME"
+          - eda_controller_token_name | length > 0
         fail_msg: >-
-          Full bootstrap requires LM, Edwin AI, and EDA credentials.
-          Fill in all values in credentials.yml.
+          Full bootstrap requires LM, Edwin AI, EDA HMAC, and
+          eda_controller_token_name (EDA Controller token that can
+          launch job templates). Fill in credentials.yml.
       when: full_bootstrap | bool
 
     # =================================================================
@@ -72,6 +86,66 @@
       ansible.controller.organization:
         name: "{{ lm_aiops_org }}"
         description: "Network Operations — LM AIOps demo"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
+    - name: Ensure Controller project exists
+      ansible.controller.project:
+        name: "{{ lm_aiops_project_name }}"
+        description: "LM AIOps solution guide playbooks and rulebook"
+        organization: "{{ lm_aiops_org }}"
+        scm_type: git
+        scm_url: "{{ lm_aiops_project_url }}"
+        scm_branch: "{{ lm_aiops_project_branch }}"
+        update_project: true
+        wait: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
+    - name: Ensure Network Inventory exists
+      ansible.controller.inventory:
+        name: "{{ lm_aiops_inventory }}"
+        organization: "{{ lm_aiops_org }}"
+        description: "ContainerLab BGP mesh"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+
+    - name: Ensure lab hosts exist in Network Inventory
+      ansible.controller.host:
+        name: "{{ item.key }}"
+        inventory: "{{ lm_aiops_inventory }}"
+        enabled: true
+        variables: |
+          ansible_host: {{ item.value }}
+          ansible_network_os: arista.eos.eos
+          ansible_connection: ansible.netcommon.network_cli
+          ansible_become: true
+          ansible_become_method: enable
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      loop: "{{ lab_inventory_hosts | dict2items }}"
+
+    - name: Ensure Workshop Credential exists
+      ansible.controller.credential:
+        name: "{{ lm_aiops_credential }}"
+        description: "Machine credential for ContainerLab EOS SSH"
+        organization: "{{ lm_aiops_org }}"
+        credential_type: Machine
+        inputs:
+          username: "{{ workshop_ssh_user }}"
+          password: "{{ workshop_ssh_password }}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
@@ -145,6 +219,7 @@
         project: "{{ lm_aiops_project_name }}"
         playbook: "playbooks/reset_bgp_session.yml"
         inventory: "{{ lm_aiops_inventory }}"
+        execution_environment: "{{ lm_aiops_ee }}"
         credentials:
           - "{{ lm_aiops_credential }}"
         ask_variables_on_launch: true
@@ -162,6 +237,7 @@
         project: "{{ lm_aiops_project_name }}"
         playbook: "playbooks/enrich_with_edwin_ai.yml"
         inventory: "{{ lm_aiops_inventory }}"
+        execution_environment: "{{ lm_aiops_ee }}"
         credentials:
           - "{{ lm_aiops_credential }}"
         ask_variables_on_launch: true
@@ -179,6 +255,7 @@
         project: "{{ lm_aiops_project_name }}"
         playbook: "playbooks/bounce_interface.yml"
         inventory: "{{ lm_aiops_inventory }}"
+        execution_environment: "{{ lm_aiops_ee }}"
         credentials:
           - "{{ lm_aiops_credential }}"
         ask_variables_on_launch: true
@@ -196,6 +273,7 @@
         project: "{{ lm_aiops_project_name }}"
         playbook: "playbooks/restart_routing.yml"
         inventory: "{{ lm_aiops_inventory }}"
+        execution_environment: "{{ lm_aiops_ee }}"
         credentials:
           - "{{ lm_aiops_credential }}"
         ask_variables_on_launch: true
@@ -213,6 +291,7 @@
         project: "{{ lm_aiops_project_name }}"
         playbook: "playbooks/rollback_config.yml"
         inventory: "{{ lm_aiops_inventory }}"
+        execution_environment: "{{ lm_aiops_ee }}"
         credentials:
           - "{{ lm_aiops_credential }}"
         ask_variables_on_launch: true
@@ -230,6 +309,7 @@
         project: "{{ lm_aiops_project_name }}"
         playbook: "playbooks/escalate_to_edwin_ai.yml"
         inventory: "{{ lm_aiops_inventory }}"
+        execution_environment: "{{ lm_aiops_ee }}"
         credentials:
           - "{{ lm_aiops_credential }}"
         ask_variables_on_launch: true
@@ -247,6 +327,7 @@
         project: "{{ lm_aiops_project_name }}"
         playbook: "playbooks/report_to_logicmonitor.yml"
         inventory: "{{ lm_aiops_inventory }}"
+        execution_environment: "{{ lm_aiops_ee }}"
         credentials:
           - "{{ lm_aiops_credential }}"
         ask_variables_on_launch: true
@@ -374,6 +455,40 @@
           return a url field). Use the HMAC secret from credentials.yml
           or CONTROLLER env for synthetic tests.
         verbosity: 0
+      when: full_bootstrap | bool
+
+    - name: Ensure EDA project exists
+      ansible.eda.project:
+        name: "{{ lm_aiops_project_name }}"
+        description: "LM AIOps rulebook"
+        url: "{{ lm_aiops_project_url }}"
+        scm_branch: "{{ lm_aiops_project_branch }}"
+        organization_name: "{{ lm_aiops_org }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when: full_bootstrap | bool
+
+    - name: Ensure LogicMonitor rulebook activation exists
+      ansible.eda.rulebook_activation:
+        name: "LogicMonitor Network Remediation"
+        description: "Crawl / Walk / Run for LogicMonitor alerts"
+        project_name: "{{ lm_aiops_project_name }}"
+        rulebook_name: "{{ eda_rulebook_name }}"
+        decision_environment_name: "{{ eda_decision_environment }}"
+        organization_name: "{{ lm_aiops_org }}"
+        awx_token_name: "{{ eda_controller_token_name }}"
+        event_streams:
+          - event_stream: "LogicMonitor Alerts"
+            source_name: logicmonitor
+        restart_policy: on-failure
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
       when: full_bootstrap | bool
 
     # --- Walk: BGP Smart Remediation workflow ---
