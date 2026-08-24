@@ -60,9 +60,12 @@
   gather_facts: false
 
   tasks:
-    - name: Skip LogicMonitor ack when alert_id is missing
+    - name: Skip LogicMonitor ack when alert_id or LM credentials are missing
       ansible.builtin.meta: end_play
-      when: alert_id is not defined or alert_id | length == 0
+      when: >-
+        alert_id is not defined or alert_id | length == 0
+        or lm_company is not defined or lm_company | length == 0
+        or lm_bearer_token is not defined or lm_bearer_token | length == 0
 
     - name: Acknowledge alert in LogicMonitor
       ansible.builtin.uri:
