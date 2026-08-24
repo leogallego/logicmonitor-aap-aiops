@@ -129,7 +129,8 @@ export CONTROLLER_USERNAME="admin"
 export CONTROLLER_PASSWORD="<your-password>"
 export LM_AIOPS_PROJECT_URL="https://github.com/<you>/logicmonitor-aap-aiops.git"
 export WORKSHOP_SSH_PASSWORD="<lab-eos-ssh-password>"
-# optional: export CONTROLLER_VERIFY_SSL=true
+# optional: export CONTROLLER_VERIFY_SSL=false   # lab Controllers with self-signed certs
+# TLS verification defaults to true
 
 ansible-playbook lab-automation/aap_bootstrap_lm_aiops.yml
 ```
