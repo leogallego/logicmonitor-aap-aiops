@@ -182,7 +182,7 @@ Four integration surfaces are used across the three maturity stages:
 
 | Surface | Component | Stage | Role |
 |---------|-----------|-------|------|
-| **EDA Event Stream** | AAP Event Streams (AAP 2.5+) | All | Platform-managed webhook endpoint with HMAC auth; routes events to rulebook activations |
+| **EDA Event Stream** | AAP Event Streams (AAP 2.5+) | All | Platform-managed webhook endpoint (Token for live LM, HMAC for synthetic tests); routes events to rulebook activations |
 | **EDA webhook source** | `ansible.eda.webhook` source plugin | All | Portable webhook source in the rulebook; mapped to an Event Stream at activation time |
 | **LM device management** | `logicmonitor.integration` collection | All | Manages LM devices, collectors, alert rules, device groups |
 | **Edwin AI query** | `logicmonitor.edwin_ai.query_api` module | Walk, Run | Queries Edwin AI for correlated alerts, events, insights |
@@ -253,7 +253,7 @@ LM detects BGP peer down on network device
 | Project | LM AIOps Solution Guide |
 | Playbook | `playbooks/reset_bgp_session.yml` |
 | Inventory | Network Inventory |
-| Credentials | Machine Credential |
+| Credentials | Machine Credential; LogicMonitor API when `full_bootstrap=true` |
 | Ask Variables on Launch | Yes |
 | Extra Variables | `affected_host` (from EDA), `alert_id` (from EDA); optional `interface` (default `Ethernet1`) |
 
@@ -277,7 +277,7 @@ The rulebook evaluates the alert and matches the Crawl rule:
           alert_id: "{{ event.payload.id }}"
 ```
 
-The "Reset BGP Session" job template (`playbooks/reset_bgp_session.yml`) targets the affected device. In this lab the Crawl fault is an interface shutdown (`playbooks/simulate_bgp_down.yml` on `Ethernet1` by default), so the playbook enables that interface first, then clears BGP sessions, waits until `show ip bgp summary` has no Idle/Active/Connect peers, and validates recovery. `clear ip bgp *` alone cannot unshut a link. On success, it reports the remediation result back to LogicMonitor via `playbooks/report_to_logicmonitor.yml`, which acknowledges and annotates the alert:
+The "Reset BGP Session" job template (`playbooks/reset_bgp_session.yml`) targets the affected device. In this lab the Crawl fault is an interface shutdown (`playbooks/simulate_bgp_down.yml` on `Ethernet1` by default), so the playbook enables that interface first, then clears BGP sessions, waits until `show ip bgp summary` has no Idle/Active/Connect peers, and validates recovery. `clear ip bgp *` alone cannot unshut a link. On success, a second play in the same job acknowledges the LogicMonitor alert when `alert_id` and LM API credentials are present (skipped on basic bootstrap and synthetic tests without those vars). Walk still reports via `playbooks/report_to_logicmonitor.yml`.
 
 ```yaml
 # Note: The logicmonitor.integration collection does not yet include an alert
@@ -293,8 +293,8 @@ The "Reset BGP Session" job template (`playbooks/reset_bgp_session.yml`) targets
     body_format: json
     body:
       ackComment: >-
-        Automated remediation by AAP: {{ remediation_result }}
-        on host {{ remediation_host }}.
+        Automated remediation by AAP: bgp_reset_success
+        on host {{ affected_host }}.
     status_code: [200, 202]
 ```
 
@@ -323,7 +323,7 @@ For hands-on testing with a lab environment, see the [Demo Guide](README-AIOps-L
 
 | Component | Details |
 |-----------|---------|
-| Event Stream | "LogicMonitor Alerts" with HMAC credential |
+| Event Stream | "LogicMonitor Alerts" with Token credential (HMAC only for `validation/test_*.sh`) |
 | EDA source | `ansible.eda.webhook` (mapped to Event Stream at activation time) |
 | Rulebook | Single rule matching `bgp_peer_down` |
 | Job Template | "Reset BGP Session" |
@@ -433,7 +433,7 @@ injectors:
            +------------------+
 ```
 
-The workflow uses convergence nodes: each remediation branch runs based on the `root_cause` artifact set by the enrichment node. If Edwin AI is unreachable, the enrichment node fails and the failure fallback triggers the default BGP reset (Crawl-stage behavior). All branches converge to the "Report to LogicMonitor" node, which acknowledges the alert in LogicMonitor with the remediation result.
+The workflow is sequential so Report cannot start after the first skipped sibling: Enrich → Bounce → Restart → Rollback → Report. Each remediation playbook skips unless `root_cause` matches. Empty Edwin results map to `config_drift` (`walk_unknown_root_cause`) so lab AS-drift rollback still runs; set that var to `unknown` to fail Enrich and take Reset BGP Session. If Edwin AI is unreachable, Enrich fails and the failure path is Reset BGP Session then Report.
 
 ### Use Case: BGP Flapping -- Multiple Root Causes
 
@@ -798,7 +798,7 @@ The architecture remains the same: LogicMonitor detects, Edwin AI analyzes, and 
 
 ### Next Steps
 
-1. **Start with Crawl.** Create the "LogicMonitor Alerts" Event Stream in EDA Controller with HMAC authentication. Deploy the EDA rulebook activation and map the Event Stream to the webhook source. Create the "Reset BGP Session" job template. Configure the LogicMonitor webhook to POST to the Event Stream URL. Validate that known BGP alerts trigger deterministic remediation. This can be running in production within a day.
+1. **Start with Crawl.** Create the "LogicMonitor Alerts" Event Stream in EDA Controller with **Token** authentication (Custom HTTP cannot HMAC-sign). Deploy the EDA rulebook activation and map the Event Stream to the webhook source. Create the "Reset BGP Session" job template. Configure the LogicMonitor webhook to POST to the Event Stream URL with the token in a static header. Validate that known BGP alerts trigger deterministic remediation. This can be running in production within a day.
 
 2. **Expand to Walk.** Once Crawl-stage automation is proven, add the Edwin AI enrichment workflow. Configure Edwin AI credentials. Build the "BGP Smart Remediation" workflow template. Start with a single ambiguous alert type and expand as the team gains confidence.
 
