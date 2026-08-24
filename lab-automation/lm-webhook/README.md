@@ -61,11 +61,11 @@ LogicMonitor Custom HTTP Delivery substitutes tokens into the body and
 optional static headers. It does **not** compute GitHub-style
 `X-Hub-Signature-256` over the body.
 
-- For a live LM → Event Stream path, prefer an Event Stream credential
-  type that LM can satisfy with a **static header** (Token / Basic),
-  not HMAC, unless you terminate HMAC in a proxy.
-- `validation/test_*.sh` can still HMAC-sign synthetic posts when
-  `EDA_HMAC_SECRET` is set.
+- Full bootstrap defaults to a **Token Event Stream**. Put
+  `eda_event_stream_token` on the LM integration as a static header
+  (`Authorization` unless you override `eda_event_stream_header`).
+- Set `eda_event_stream_auth: hmac` only for `validation/test_*.sh`
+  posts that set `EDA_HMAC_SECRET`. Custom HTTP cannot HMAC-sign.
 
 ## Example rendered Crawl payload
 

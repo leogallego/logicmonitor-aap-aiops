@@ -43,6 +43,10 @@
     eda_decision_environment: "{{ lookup('ansible.builtin.env', 'EDA_DECISION_ENVIRONMENT') | default('Default Decision Environment', true) }}"
     eda_controller_token_name: "{{ lookup('ansible.builtin.env', 'EDA_CONTROLLER_TOKEN_NAME') | default('', true) }}"
     eda_rulebook_name: logicmonitor_network.yml
+    # token: live LM Custom HTTP (static header). hmac: validation/test_*.sh.
+    eda_event_stream_auth: "{{ lookup('ansible.builtin.env', 'EDA_EVENT_STREAM_AUTH') | default('token', true) }}"
+    eda_event_stream_token: "{{ lookup('ansible.builtin.env', 'EDA_EVENT_STREAM_TOKEN') | default('', true) }}"
+    eda_event_stream_header: "{{ lookup('ansible.builtin.env', 'EDA_EVENT_STREAM_HEADER') | default('Authorization', true) }}"
 
   tasks:
     # =================================================================
@@ -69,12 +73,15 @@
           - edwin_portal is defined and edwin_portal != "CHANGEME"
           - edwin_access_id is defined and edwin_access_id != "CHANGEME"
           - edwin_access_key is defined and edwin_access_key != "CHANGEME"
-          - eda_hmac_secret is defined and eda_hmac_secret != "CHANGEME"
           - eda_controller_token_name | length > 0
+          - eda_event_stream_auth in ['token', 'hmac']
+          - (eda_event_stream_auth == 'token' and eda_event_stream_token is defined and eda_event_stream_token != 'CHANGEME' and eda_event_stream_token | length > 0) or (eda_event_stream_auth == 'hmac' and eda_hmac_secret is defined and eda_hmac_secret != 'CHANGEME' and eda_hmac_secret | length > 0)
         fail_msg: >-
-          Full bootstrap requires LM, Edwin AI, EDA HMAC, and
-          eda_controller_token_name (EDA Controller token that can
-          launch job templates). Fill in credentials.yml.
+          Full bootstrap requires LM, Edwin AI, eda_controller_token_name,
+          and Event Stream auth: eda_event_stream_token when
+          eda_event_stream_auth=token (default, live LM), or
+          eda_hmac_secret when eda_event_stream_auth=hmac
+          (validation/test_*.sh). Fill in credentials.yml.
       when: full_bootstrap | bool
 
     # =================================================================
@@ -432,7 +439,24 @@
       when: full_bootstrap | bool
 
     # --- EDA Event Stream ---
-    - name: "Create EDA HMAC credential for webhook signing"
+    - name: Create EDA Token credential for live LogicMonitor webhooks
+      ansible.eda.credential:
+        name: "LM Webhook Token"
+        credential_type_name: "Token Event Stream"
+        organization_name: "{{ lm_aiops_org }}"
+        inputs:
+          token: "{{ eda_event_stream_token }}"
+          http_header_key: "{{ eda_event_stream_header }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ controller_verify_ssl }}"
+      when:
+        - full_bootstrap | bool
+        - eda_event_stream_auth == 'token'
+
+    - name: Create EDA HMAC credential for synthetic webhook tests
       ansible.eda.credential:
         name: "LM Webhook HMAC"
         credential_type_name: "HMAC Event Stream"
@@ -444,12 +468,14 @@
         controller_username: "{{ controller_username }}"
         controller_password: "{{ controller_password }}"
         validate_certs: "{{ controller_verify_ssl }}"
-      when: full_bootstrap | bool
+      when:
+        - full_bootstrap | bool
+        - eda_event_stream_auth == 'hmac'
 
     - name: "Create LogicMonitor Alerts Event Stream"
       ansible.eda.event_stream:
         name: "LogicMonitor Alerts"
-        credential_name: "LM Webhook HMAC"
+        credential_name: "{{ 'LM Webhook HMAC' if eda_event_stream_auth == 'hmac' else 'LM Webhook Token' }}"
         organization_name: "{{ lm_aiops_org }}"
         forward_events: true
         state: present
@@ -466,8 +492,9 @@
           Event Stream 'LogicMonitor Alerts' is present
           (id {{ __event_stream.id | default('unknown') }}).
           Copy its URL from the EDA Controller UI (the module does not
-          return a url field). Use the HMAC secret from credentials.yml
-          or CONTROLLER env for synthetic tests.
+          return a url field). Auth is {{ eda_event_stream_auth }}.
+          Token: put eda_event_stream_token in a static LM header.
+          HMAC: use eda_hmac_secret only with validation/test_*.sh.
         verbosity: 0
       when: full_bootstrap | bool
 

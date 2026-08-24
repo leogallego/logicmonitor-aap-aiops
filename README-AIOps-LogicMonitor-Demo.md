@@ -185,7 +185,7 @@ After a **basic** bootstrap, create these in the UI (skip if you used `full_boot
 
 ### 1.6 Create the EDA Event Stream
 
-Skip this section if you already ran with `full_bootstrap=true` (the playbook creates "LogicMonitor Alerts").
+Skip this section if you already ran with `full_bootstrap=true` (the playbook creates a Token Event Stream named "LogicMonitor Alerts" unless you set `eda_event_stream_auth=hmac`).
 
 In the EDA Controller UI:
 
