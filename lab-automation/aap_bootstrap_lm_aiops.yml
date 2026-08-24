@@ -365,121 +365,113 @@
       register: __event_stream
       when: full_bootstrap | bool
 
-    - name: "Display Event Stream URL for LogicMonitor webhook config"
+    - name: Display Event Stream webhook hint for LogicMonitor
       ansible.builtin.debug:
         msg: >-
-          Event Stream created. Configure LogicMonitor webhook with:
-          URL: {{ __event_stream.url | default('(check EDA Controller UI)') }}
-          HMAC Secret: (the eda_hmac_secret value from your credentials.yml)
+          Event Stream 'LogicMonitor Alerts' is present
+          (id {{ __event_stream.id | default('unknown') }}).
+          Copy its URL from the EDA Controller UI (the module does not
+          return a url field). Use the HMAC secret from credentials.yml
+          or CONTROLLER env for synthetic tests.
         verbosity: 0
       when: full_bootstrap | bool
 
-    # --- Walk: BGP Smart Remediation Workflow ---
-    # All three remediation nodes are success children of the enrichment
-    # node. Each remediation playbook checks the root_cause artifact and
-    # skips itself if the root cause does not match its specialization.
-    - name: "Create BGP Smart Remediation workflow template"
-      ansible.controller.workflow_job_template:
-        name: "BGP Smart Remediation"
-        organization: "{{ lm_aiops_org }}"
-        inventory: "{{ lm_aiops_inventory }}"
-        ask_variables_on_launch: true
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: "{{ controller_verify_ssl }}"
+    # --- Walk: BGP Smart Remediation workflow ---
+    # Create every node first, then add edges. Linking to a missing
+    # identifier fails. success_nodes / failure_nodes are identifier
+    # strings, not dicts. Each remediation playbook still skips when
+    # root_cause does not match.
+    - name: Build BGP Smart Remediation workflow
       when: full_bootstrap | bool
+      module_defaults:
+        ansible.controller.workflow_job_template:
+          organization: "{{ lm_aiops_org }}"
+          controller_host: "{{ controller_host }}"
+          controller_username: "{{ controller_username }}"
+          controller_password: "{{ controller_password }}"
+          validate_certs: "{{ controller_verify_ssl }}"
+        ansible.controller.workflow_job_template_node:
+          workflow_job_template: "BGP Smart Remediation"
+          organization: "{{ lm_aiops_org }}"
+          controller_host: "{{ controller_host }}"
+          controller_username: "{{ controller_username }}"
+          controller_password: "{{ controller_password }}"
+          validate_certs: "{{ controller_verify_ssl }}"
+          state: present
+      block:
+        - name: Ensure BGP Smart Remediation workflow exists
+          ansible.controller.workflow_job_template:
+            name: "BGP Smart Remediation"
+            inventory: "{{ lm_aiops_inventory }}"
+            ask_variables_on_launch: true
+            state: present
 
-    - name: "Workflow node — Enrich with Edwin AI (root)"
-      ansible.controller.workflow_job_template_node:
-        workflow_job_template: "BGP Smart Remediation"
-        organization: "{{ lm_aiops_org }}"
-        identifier: "enrich"
-        unified_job_template: "Enrich with Edwin AI"
-        success_nodes:
-          - identifier: "bounce"
-          - identifier: "restart"
-          - identifier: "rollback"
-        failure_nodes:
-          - identifier: "default_reset"
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: "{{ controller_verify_ssl }}"
-      when: full_bootstrap | bool
+        - name: Ensure workflow node enrich exists
+          ansible.controller.workflow_job_template_node:
+            identifier: enrich
+            unified_job_template: "Enrich with Edwin AI"
 
-    - name: "Workflow node — Bounce Interface"
-      ansible.controller.workflow_job_template_node:
-        workflow_job_template: "BGP Smart Remediation"
-        organization: "{{ lm_aiops_org }}"
-        identifier: "bounce"
-        unified_job_template: "Bounce Interface"
-        success_nodes:
-          - identifier: "report"
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: "{{ controller_verify_ssl }}"
-      when: full_bootstrap | bool
+        - name: Ensure workflow node bounce exists
+          ansible.controller.workflow_job_template_node:
+            identifier: bounce
+            unified_job_template: "Bounce Interface"
 
-    - name: "Workflow node — Restart Routing"
-      ansible.controller.workflow_job_template_node:
-        workflow_job_template: "BGP Smart Remediation"
-        organization: "{{ lm_aiops_org }}"
-        identifier: "restart"
-        unified_job_template: "Restart Routing"
-        success_nodes:
-          - identifier: "report"
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: "{{ controller_verify_ssl }}"
-      when: full_bootstrap | bool
+        - name: Ensure workflow node restart exists
+          ansible.controller.workflow_job_template_node:
+            identifier: restart
+            unified_job_template: "Restart Routing"
 
-    - name: "Workflow node — Rollback Config"
-      ansible.controller.workflow_job_template_node:
-        workflow_job_template: "BGP Smart Remediation"
-        organization: "{{ lm_aiops_org }}"
-        identifier: "rollback"
-        unified_job_template: "Rollback Config"
-        success_nodes:
-          - identifier: "report"
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: "{{ controller_verify_ssl }}"
-      when: full_bootstrap | bool
+        - name: Ensure workflow node rollback exists
+          ansible.controller.workflow_job_template_node:
+            identifier: rollback
+            unified_job_template: "Rollback Config"
 
-    - name: "Workflow node — Default BGP Reset (failure fallback)"
-      ansible.controller.workflow_job_template_node:
-        workflow_job_template: "BGP Smart Remediation"
-        organization: "{{ lm_aiops_org }}"
-        identifier: "default_reset"
-        unified_job_template: "Reset BGP Session"
-        success_nodes:
-          - identifier: "report"
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: "{{ controller_verify_ssl }}"
-      when: full_bootstrap | bool
+        - name: Ensure workflow node default_reset exists
+          ansible.controller.workflow_job_template_node:
+            identifier: default_reset
+            unified_job_template: "Reset BGP Session"
 
-    - name: "Workflow node — Report to LogicMonitor (convergence)"
-      ansible.controller.workflow_job_template_node:
-        workflow_job_template: "BGP Smart Remediation"
-        organization: "{{ lm_aiops_org }}"
-        identifier: "report"
-        unified_job_template: "Report to LogicMonitor"
-        all_parents_must_converge: false
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: "{{ controller_verify_ssl }}"
-      when: full_bootstrap | bool
+        - name: Ensure workflow node report exists
+          ansible.controller.workflow_job_template_node:
+            identifier: report
+            unified_job_template: "Report to LogicMonitor"
+            all_parents_must_converge: false
+
+        - name: Link enrich to remediation nodes
+          ansible.controller.workflow_job_template_node:
+            identifier: enrich
+            unified_job_template: "Enrich with Edwin AI"
+            success_nodes:
+              - bounce
+              - restart
+              - rollback
+            failure_nodes:
+              - default_reset
+
+        - name: Link bounce to report
+          ansible.controller.workflow_job_template_node:
+            identifier: bounce
+            unified_job_template: "Bounce Interface"
+            success_nodes:
+              - report
+
+        - name: Link restart to report
+          ansible.controller.workflow_job_template_node:
+            identifier: restart
+            unified_job_template: "Restart Routing"
+            success_nodes:
+              - report
+
+        - name: Link rollback to report
+          ansible.controller.workflow_job_template_node:
+            identifier: rollback
+            unified_job_template: "Rollback Config"
+            success_nodes:
+              - report
+
+        - name: Link default_reset to report
+          ansible.controller.workflow_job_template_node:
+            identifier: default_reset
+            unified_job_template: "Reset BGP Session"
+            success_nodes:
+              - report
