@@ -508,8 +508,13 @@
     # --- Walk: BGP Smart Remediation workflow ---
     # Create every node first, then add edges. Linking to a missing
     # identifier fails. success_nodes / failure_nodes are identifier
-    # strings, not dicts. Each remediation playbook still skips when
-    # root_cause does not match.
+    # strings, not dicts.
+    # Success path is sequential so Report cannot start after the first
+    # skipped sibling: enrich -> bounce -> restart -> rollback -> report.
+    # Enrich failure -> default_reset -> report. Report uses ANY
+    # convergence (do not set all_parents_must_converge: true — rollback
+    # and default_reset never both run). Each remediation still skips
+    # when root_cause does not match.
     - name: Build BGP Smart Remediation workflow
       when: full_bootstrap | bool
       module_defaults:
@@ -566,30 +571,28 @@
             unified_job_template: "Report to LogicMonitor"
             all_parents_must_converge: false
 
-        - name: Link enrich to remediation nodes
+        - name: Link enrich to first remediation and failure fallback
           ansible.controller.workflow_job_template_node:
             identifier: enrich
             unified_job_template: "Enrich with Edwin AI"
             success_nodes:
               - bounce
-              - restart
-              - rollback
             failure_nodes:
               - default_reset
 
-        - name: Link bounce to report
+        - name: Link bounce to restart
           ansible.controller.workflow_job_template_node:
             identifier: bounce
             unified_job_template: "Bounce Interface"
             success_nodes:
-              - report
+              - restart
 
-        - name: Link restart to report
+        - name: Link restart to rollback
           ansible.controller.workflow_job_template_node:
             identifier: restart
             unified_job_template: "Restart Routing"
             success_nodes:
-              - report
+              - rollback
 
         - name: Link rollback to report
           ansible.controller.workflow_job_template_node:

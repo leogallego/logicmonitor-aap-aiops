@@ -6,7 +6,7 @@
   tasks:
     - name: Skip if root cause does not match
       ansible.builtin.meta: end_host
-      when: root_cause | default('cpu_exhaustion') != 'cpu_exhaustion'
+      when: (root_cause | default('')) != 'cpu_exhaustion'
 
     - name: Capture CPU and process state
       arista.eos.eos_command:

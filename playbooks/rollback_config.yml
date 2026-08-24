@@ -9,7 +9,7 @@
   tasks:
     - name: Skip if root cause does not match
       ansible.builtin.meta: end_host
-      when: root_cause | default('config_drift') != 'config_drift'
+      when: (root_cause | default('')) != 'config_drift'
 
     - name: List flash files
       arista.eos.eos_command:
