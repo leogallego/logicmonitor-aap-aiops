@@ -443,7 +443,7 @@ BGP sessions are flapping (repeatedly going up and down) on a router. The surfac
 |----------------|------------|-----------------|
 | BGP flapping + interface error counters spiking | Bad link or cable | Bounce the interface (`playbooks/bounce_interface.yml`) |
 | BGP flapping + CPU at 98% on the device | Resource exhaustion | Restart routing process (`playbooks/restart_routing.yml`) |
-| BGP flapping + config change event 5 minutes ago | Config drift | Roll back to last known good config (`playbooks/rollback_config.yml`) |
+| BGP flapping + config change event 5 minutes ago | Config drift | Restore `flash:lm-aiops-known-good` taken at the start of `playbooks/simulate_config_drift.yml` (`playbooks/rollback_config.yml`) |
 | Only BGP flapping, no correlated alerts | Unknown / transient | Default BGP reset (Crawl fallback) |
 
 The enrichment playbook (`playbooks/enrich_with_edwin_ai.yml`) uses `logicmonitor.edwin_ai.query_api` to query Edwin AI for recent alerts and insights on the affected device:

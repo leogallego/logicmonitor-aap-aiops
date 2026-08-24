@@ -348,7 +348,7 @@ Introduce a wrong AS number in the BGP configuration:
 ansible-playbook playbooks/simulate_config_drift.yml -i inventory/hosts.yml
 ```
 
-This changes `router2`'s BGP neighbor AS for `10.1.12.1` (router1) from `64501` to `99999`, causing a peering mismatch and BGP failure.
+This first copies running-config to `flash:lm-aiops-known-good` on `router2` (BGP must already be `Estab`), then changes the neighbor AS for `10.1.12.1` (router1) from `64501` to `99999`. The snapshot is on the device so the AAP rollback job can see it. Do not run simulate twice without rollback — the playbook refuses to snapshot a broken mesh. Do not `write memory` after simulate.
 
 #### 3B.2 Observe the End-to-End Flow
 
@@ -357,7 +357,7 @@ This changes `router2`'s BGP neighbor AS for `10.1.12.1` (router1) from `64501` 
 3. **EDA rulebook** matches the Walk rule, triggers "BGP Smart Remediation" workflow
 4. **Workflow Node 1:** "Enrich with Edwin AI" queries Edwin AI
 5. Edwin AI returns: BGP failure + config change event 5 minutes ago -- root cause: `config_drift`
-6. **Workflow Node 2c:** "Rollback Config" runs, restoring the last known good configuration
+6. **Workflow Node 2c:** "Rollback Config" runs `configure replace flash:lm-aiops-known-good` (the simulate snapshot). If that file is missing, it falls back to device `startup-config` (ContainerLab deploy).
 7. BGP re-establishes with the correct AS numbers
 8. Results reported back to LogicMonitor
 

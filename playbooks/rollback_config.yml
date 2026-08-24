@@ -3,23 +3,47 @@
   hosts: "{{ affected_host }}"
   gather_facts: false
 
+  vars:
+    known_good_flash_file: lm-aiops-known-good
+
   tasks:
     - name: Skip if root cause does not match
       ansible.builtin.meta: end_host
       when: root_cause | default('config_drift') != 'config_drift'
 
-    - name: Get available configuration sessions
+    - name: List flash files
       arista.eos.eos_command:
         commands:
-          - show configuration sessions
-      register: __config_sessions
+          - "dir flash:"
+      register: __flash
       changed_when: false
 
-    - name: Rollback to last checkpoint
-      arista.eos.eos_config:
-        replace: config
-        src: "startup-config"
-        backup: true
+    - name: Restore running-config from simulate snapshot
+      arista.eos.eos_command:
+        commands:
+          - command: "configure replace flash:{{ known_good_flash_file }}"
+            prompt: '(\[confirm\]|\[y/N\])'
+            answer: y
+            newline: false
+      when: known_good_flash_file in __flash.stdout[0]
+      changed_when: true
+
+    - name: Restore running-config from startup-config
+      arista.eos.eos_command:
+        commands:
+          - command: configure replace startup-config
+            prompt: '(\[confirm\]|\[y/N\])'
+            answer: y
+            newline: false
+      when: known_good_flash_file not in __flash.stdout[0]
+      changed_when: true
+
+    - name: Warn when falling back to startup-config
+      ansible.builtin.debug:
+        msg: >-
+          flash:{{ known_good_flash_file }} was not found.
+          Restored from device startup-config (ContainerLab deploy baseline).
+      when: known_good_flash_file not in __flash.stdout[0]
 
     - name: Wait for BGP peers to re-establish after config rollback
       arista.eos.eos_command:
@@ -27,14 +51,15 @@
           - show ip bgp summary
       register: __bgp_after
       changed_when: false
-      until: "'Established' in __bgp_after.stdout[0]"
+      # EOS summary State is often Estab; that string also matches Established.
+      until: "'Estab' in __bgp_after.stdout[0]"
       retries: 6
       delay: 5
 
     - name: Assert BGP peers are established
       ansible.builtin.assert:
         that:
-          - "'Established' in __bgp_after.stdout[0]"
+          - "'Estab' in __bgp_after.stdout[0]"
         fail_msg: "BGP peers did not re-establish after config rollback"
         success_msg: "BGP peers re-established after config rollback"
 
